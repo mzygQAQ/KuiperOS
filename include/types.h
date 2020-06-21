@@ -44,10 +44,10 @@ extern "C" {
 #endif
 
 
-typedef unsigned int	size_t;
-typedef int				ptrdiff_t;
-typedef int				pid_t;
-typedef long			time_t;
+typedef unsigned int    size_t;
+typedef int             ptrdiff_t;
+typedef int	            pid_t;
+typedef long            time_t;
 
 typedef unsigned char   uint8_t;
 typedef unsigned short  uint16_t;

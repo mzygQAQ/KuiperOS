@@ -77,7 +77,7 @@ print_str:
 boot_msg:
     db 0x0d, 0x0a
     db "Loading..."
-	db 0x0d, 0x0a
+    db 0x0d, 0x0a
 
 times 510-($-$$) db 0x00
 
