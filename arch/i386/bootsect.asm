@@ -58,28 +58,37 @@ _start:
 
     mov ax, boot_msg
     mov bp, ax
-    mov cx, 14
+    mov cx, len_boot_msg
     call print_str
-
-; test memcmp start
-    mov si, str_src
-    mov di, str_dest
-    mov cx, 0x4
-    call memcmp
-    cmp cx, 0
-    jz print_eq
-    jmp spin
-print_eq:
-    ; strAddr->es:bp  len->cx
-    mov ax, str_eq
-    mov bp, ax
-    mov cx, 5
-    call print_str
-; test memcmp end
 
 spin:
 	hlt
 	jmp spin
+
+loader_not_found:
+
+
+;
+; @param es:bx : root entry addr
+; @param ds:si : target string
+; @param cx    : target string length
+; @return  dx!=0? exist:notexist
+;                when exist, and the bx is the target entry
+;
+search_entry:
+    mov dx, [BPB_RootEntCnt]    ; max search count
+    mov bp, sp
+_search:
+    cmp dx, 0
+    jz _not_exist
+
+    call memcmp
+    cmp cx, 0
+    jz _exist
+    jmp _search
+_exist:
+_not_exist:
+    ret
 
 ; read_sector
 ; @param ax    : logic sector nbr
@@ -193,12 +202,19 @@ str_dest:
 
 str_eq:
     db "equal"
+
 str_noteq:
     db "notequal"
+
 boot_msg:
+    db "DEBUG: Booting..."
     db 0x0d, 0x0a
-    db "Loading..."
+len_boot_msg equ ($ - boot_msg)
+
+str_loader_not_found:
+    db "ERROR: Loader not found"
     db 0x0d, 0x0a
+len_loader_not_found equ ($ - str_loader_not_found)
 
 times 510-($-$$) db 0x00
 
