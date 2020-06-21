@@ -61,6 +61,22 @@ _start:
     mov cx, 14
     call print_str
 
+; test memcmp start
+    mov si, str_src
+    mov di, str_dest
+    mov cx, 0x4
+    call memcmp
+    cmp cx, 0
+    jz print_eq
+    jmp spin
+print_eq:
+    ; es bp
+    mov ax, str_eq
+    mov bp, ax
+    mov cx, 5
+    call print_str
+; test memcmp end
+
 spin:
 	hlt
 	jmp spin
@@ -166,6 +182,19 @@ _not_equal:
     pop ax
     ret
 
+; =========================================
+; for test case, can be delete after test
+test_case:
+str_src:
+    db "str2"
+str_dest:
+    db "str2"
+; =========================================
+
+str_eq:
+    db "equal"
+str_noteq:
+    db "notequal"
 boot_msg:
     db 0x0d, 0x0a
     db "Loading..."
