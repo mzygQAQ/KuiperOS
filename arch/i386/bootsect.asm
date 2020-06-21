@@ -70,7 +70,7 @@ _start:
     jz print_eq
     jmp spin
 print_eq:
-    ; es bp
+    ; strAddr->es:bp  len->cx
     mov ax, str_eq
     mov bp, ax
     mov cx, 5
