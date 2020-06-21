@@ -50,17 +50,17 @@ fat12_header:
     BS_FileSysType db "FAT12   "
 
 _start:
-	mov ax, cs
-	mov ds, ax
-	mov es, ax
-	mov ss, ax
-	mov sp, BaseOfStack ; The stack swims from high address to low address
+    mov ax, cs
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov sp, BaseOfStack ; The stack swims from high address to low address
 
-	mov ax, boot_msg
+    mov ax, boot_msg
     mov bp, ax
     mov cx, 14
     call print_str
-	
+
 spin:
 	hlt
 	jmp spin
@@ -136,6 +136,34 @@ print_str:
     mov ax, 0x1301
     mov bx, 0x0007
     int 0x10
+    ret
+
+; compare the memory if equal or not equal
+; @param ds:si : src
+; @param es:di : dest
+; @param cx    : len
+; @return cx == 0?
+memcmp:
+    push ax
+    push si
+    push di
+_compare:
+    cmp cx, 0
+    jz _equal
+    mov al, [si]
+    cmp al, byte [di]
+    jz _go_on
+    jmp _not_equal
+_go_on:
+    inc si
+    inc di
+    dec cx
+    jmp _compare
+_equal:
+_not_equal:
+    pop di
+    pop si
+    pop ax
     ret
 
 boot_msg:
