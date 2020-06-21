@@ -26,7 +26,7 @@ org 0x7c00
 BaseOfStack equ 0x7c00
 
 jmp short _start
-nop	; fill 3 bytes		
+nop	                ; fill to 3 bytes
 
 fat12_header:
     BS_OEMName     db "KuiperOS"
@@ -65,9 +65,73 @@ spin:
 	hlt
 	jmp spin
 
+; read_sector
+; @param ax    : logic sector nbr
+; @param cx    : total sectors you want read
+; @param es:bx : memeory address you want to write
+; @description:
+; BIOS软驱数据读取:
+; AH=0x02
+; AL=长度(扇区)
+; CH=柱面号 CL=起始的扇区号
+; DH=磁头号 DL=驱动器号
+; ES:BX=读取到内存的地址
+; int 0x13
+read_sector:
+    push bx
+    push cx
+    push dx
+    push ax
+
+    call reset_floppy
+
+    push bx
+    push cx
+
+    mov bl, [BPB_SecPerTrk]
+    div bl
+    mov cl, ah
+    add cl, 1
+    mov ch, al
+    shr ch, 1
+    mov dh, al
+    and dh, 1
+    mov dl, [BS_DrvNum]
+
+    pop ax  ; cx -> ax
+    pop bx
+
+    mov ah, 0x02
+read:
+    int 0x13
+    jc read
+    pop ax
+    pop dx
+    pop cx
+    pop bx
+
+    ret
+
+; reset_floppy
+; @param void
+; @description
+; BIOS软驱复位:
+; AH=0x00
+; DL=驱动器号(0表示A盘)
+; int 0x13
+reset_floppy:
+    push ax
+    push dx
+    mov ah, 0x00
+    mov dl, [BS_DrvNum]
+    int 0x13
+    pop dx
+    pop ax
+    ret
+
 ;  print_str implemented by BIOS interupt
-;  es:bp : str start
-;  cx    : str length
+;  @param es:bp : str start
+;  @param cx    : str length
 print_str:
     mov ax, 0x1301
     mov bx, 0x0007
