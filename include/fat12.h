@@ -1,5 +1,5 @@
-#ifndef _FAT12_H
-#define _FAT12_H
+#ifndef __FAT12_H__
+#define __FAT12_H__
 
 #include "types.h"
 
@@ -17,4 +17,4 @@ typedef struct {
 	uint32_t DIR_FileSize;	// file size
 } fat12_root_entry_t;
 
-#endif /* end of _FAT12_H */
+#endif /* end of __FAT12_H__ */

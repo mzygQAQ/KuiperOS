@@ -2,7 +2,7 @@
 
 RM := rm -rf
 
-SRC := ./arch/i386/bootsect.asm
+SRC := ./arch/i386/boot/bootsect.asm
 OUT := ./build/boot.bin
 IMG := ./build/data.img
 

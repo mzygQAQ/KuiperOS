@@ -22,46 +22,11 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __TYPES_H__
-#define __TYPES_H__
+#ifndef __MB_H__
+#define __MB_H__
 
-#ifdef __cplusplus
-#if __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-#endif /* __cplusplus */
+#ifdef __X86__
+#define barrier() __asm__ __volatile__("" ::: "memory")
+#endfif
 
-#ifndef NULL
-#define NULL ((void *)0)
-#endif
-
-#ifndef __asm__
-#define __asm__ asm
-#endif
-
-#ifndef __volatile__
-#define __volatile__ volatile
-#endif
-
-
-typedef unsigned int    size_t;
-typedef int             ptrdiff_t;
-typedef int             pid_t;
-typedef long            time_t;
-
-typedef unsigned char   uint8_t;
-typedef unsigned short  uint16_t;
-typedef unsigned int    uint32_t;
-
-typedef char            int8_t;
-typedef short           int16_t;
-typedef int             int32_t;
-
-
-#ifdef __cplusplus
-#if __cplusplus
-}
-#endif /* __cplusplus */
-#endif /* __cplusplus */
-
-#endif /* __TYPES_H__ */
+#endif /* end of __MB_H__ */
