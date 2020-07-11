@@ -1,8 +1,11 @@
 {
   "ExpandedNodes": [
     "",
+    "\\arch",
+    "\\arch\\i386",
     "\\arch\\i386\\boot",
-    "\\include"
+    "\\arch\\i386\\include"
   ],
+  "SelectedNode": "\\arch\\i386\\boot\\print.asm",
   "PreviewInSolutionExplorer": false
 }

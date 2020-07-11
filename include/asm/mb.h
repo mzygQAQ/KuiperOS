@@ -25,6 +25,8 @@
 #ifndef __MB_H__
 #define __MB_H__
 
+#include "../types.h"
+
 #ifdef __X86__
 #define barrier() __asm__ __volatile__("" ::: "memory")
 #endfif
