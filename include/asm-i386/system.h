@@ -6,13 +6,15 @@
  * certaion extent, and the copyright belongs to the original author.
  */
 
+#define nop() __asm__ __volatile__ ("nop")
+
+/* 单CPU只需要考虑编译优化导致的内存屏障, 多CPU或者多核心CPU还需要考虑CPU级别的指令乱序 */
+
 #ifdef __GNUC__ 
 #define barrier()	__asm__ __volatile__("" ::: "memory")
 #else
 #error gcc compiler required.
 #endif
-
-#define nop() __asm__ __volatile__ ("nop")
 
 #define mb() 		barrier()
 #define rmb()		barrier()
