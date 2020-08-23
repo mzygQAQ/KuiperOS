@@ -22,8 +22,8 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __TYPES_H__
-#define __TYPES_H__
+#ifndef _KUIPER_TYPES_H_INCLUDED_
+#define _KUIPER_TYPES_H_INCLUDED_
 
 #ifdef __cplusplus
 #if __cplusplus
@@ -44,18 +44,18 @@ extern "C" {
 #endif
 
 
-typedef unsigned int    size_t;
-typedef int             ptrdiff_t;
-typedef int             pid_t;
-typedef long            time_t;
+typedef long unsigned int    size_t;
+typedef int                  ptrdiff_t;
+typedef int                  pid_t;
+typedef long                 time_t;
 
-typedef unsigned char   uint8_t;
-typedef unsigned short  uint16_t;
-typedef unsigned int    uint32_t;
+typedef unsigned char        uint8_t;
+typedef unsigned short       uint16_t;
+typedef unsigned int         uint32_t;
 
-typedef char            int8_t;
-typedef short           int16_t;
-typedef int             int32_t;
+typedef char                 int8_t;
+typedef short                int16_t;
+typedef int                  int32_t;
 
 
 #ifdef __cplusplus
@@ -64,4 +64,4 @@ typedef int             int32_t;
 #endif /* __cplusplus */
 #endif /* __cplusplus */
 
-#endif /* __TYPES_H__ */
+#endif /* _KUIPER_TYPES_H_INCLUDED_ */
