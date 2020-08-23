@@ -43,19 +43,18 @@ extern "C" {
 #define __volatile__ volatile
 #endif
 
-
 typedef long unsigned int    size_t;
 typedef int                  ptrdiff_t;
 typedef int                  pid_t;
 typedef long                 time_t;
 
-typedef unsigned char        uint8_t;
-typedef unsigned short       uint16_t;
-typedef unsigned int         uint32_t;
+typedef unsigned char        u8_t;
+typedef unsigned short       u16_t;
+typedef unsigned int         u32_t;
 
-typedef char                 int8_t;
-typedef short                int16_t;
-typedef int                  int32_t;
+typedef char                 i8_t;
+typedef short                i16_t;
+typedef int                  i32_t;
 
 
 #ifdef __cplusplus

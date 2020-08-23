@@ -1,12 +1,13 @@
 #ifndef _KUIPER_KERNEL_H_INCLUDED_
 #define _KUIPER_KERNEL_H_INCLUDED_
 
-#include "types.h"
+#include "compiler.h"
 
-#define offsetof(type,member) ((size_t)&(((type*)0)->member))
-
-#define container_of(ptr, type, member) ({ \
-     const typeof( ((type *)0)->member ) *__mptr = (ptr); \
-     (type *)( (char *)__mptr - offsetof(type,member) );})  
+#ifndef __bool_true_false_are_defined
+#define __bool_true_false_are_defined
+typedef int bool;
+#define TRUE 1
+#define FALSE 0
+#endif
 
 #endif
