@@ -1,8 +1,11 @@
 #include "../include/kuiper/list.h"
 
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
+// gcc list_test.c -o app -I../include
 
 extern void list_add_test();
 

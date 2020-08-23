@@ -27,6 +27,7 @@ struct bst_struct {
     n->father = NULL;       \
     n->left = NULL;         \
     n->right = NULL;        \
+    n		   	    \
     })
 
 #define bst_size(s)         ((s)->size)
