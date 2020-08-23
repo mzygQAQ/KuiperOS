@@ -2,6 +2,11 @@
 
 RM := rm -rf
 
+CC=gcc
+CFLAGS=-g
+BIN=kbin
+LIBS=-I./include
+
 SRC := ./arch/i386/boot/bootsect.asm
 OUT := ./build/boot.bin
 IMG := ./build/data.img
@@ -19,7 +24,7 @@ $(OUT) : $(SRC)
 	nasm $^ -o $@
 
 clean :
-	$(RM) $(IMG) $(OUT)
+	$(RM) $(IMG) $(OUT) *.o
 
 rebuild :
 	@$(MAKE) clean
