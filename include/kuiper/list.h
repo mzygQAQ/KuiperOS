@@ -1,7 +1,7 @@
 #ifndef _KUIPER_LIST_H_INCLUDED
 #define _KUIPER_LIST_H_INCLUDED
 
-#include "kernel.h"
+#include <kuiper/kernel.h>
 
 /**
  * 简单的双向链表实现.
@@ -34,7 +34,7 @@ struct list_head {
 	    } while(0)
 
 
-static __inline__ void list_add0(struct list_head *new_ele,
+static __inline__ void __list_add(struct list_head *new_ele,
 				 struct list_head *prev,
 				 struct list_head *next)
 {
@@ -46,12 +46,12 @@ static __inline__ void list_add0(struct list_head *new_ele,
 
 static __inline__ void list_add(struct list_head *new_ele, struct list_head *head)
 {
-	list_add0(new_ele, head, head->next);
+    __list_add(new_ele, head, head->next);
 }
 
 static __inline__ void list_add_tail(struct list_head *new_ele, struct list_head* head)
 {
-    list_add0(new_ele, head->prev, head);
+    __list_add(new_ele, head->prev, head);
 }
 
 static __inline__ bool list_is_empty(struct list_head *head)
@@ -59,7 +59,7 @@ static __inline__ bool list_is_empty(struct list_head *head)
     return head == head->next;
 }
 
-static __inline__ void list_del0(struct list_head *prev, struct list_head *next)
+static __inline__ void __list_del(struct list_head *prev, struct list_head *next)
 {
     next->prev = prev;
     prev->next = next;
@@ -67,12 +67,12 @@ static __inline__ void list_del0(struct list_head *prev, struct list_head *next)
 
 static __inline__ void list_del(struct list_head *entry)
 {
-    list_del0(entry->prev, entry->next);
+    __list_del(entry->prev, entry->next);
 }
 
 static __inline__ void list_del_init(struct list_head *entry)
 {
-    list_del0(entry->prev, entry->next);
+    __list_del(entry->prev, entry->next);
     INIT_LIST_HEAD(entry);
 }
 
