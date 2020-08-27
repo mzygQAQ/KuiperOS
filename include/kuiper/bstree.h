@@ -9,16 +9,18 @@
  * 建议使用rbtree.h
  */
 
-struct bst_node {
-    struct bst_node *father;
-    struct bst_node *left;
-    struct bst_node *right;
+typedef struct bstree_s bstree_t;
+
+struct bstree_node {
+    struct bstree_node *father;
+    struct bstree_node *left;
+    struct bstree_node *right;
 };
 
-typedef signed int (*bst_comparator_t)(struct bst_node *lhs, struct bst_node *rhs);
+typedef signed int (*bst_comparator_t)(struct bstree_node *lhs, struct bstree_node *rhs);
 
-struct bst_struct {
-    bst_node *root;
+struct bstree_s {
+    bstree_node *root;
     unsigned int size;
     bst_comparator_t comp;
 };
@@ -33,14 +35,14 @@ struct bst_struct {
 #define bst_size(s)         ((s)->size)
 #define bst_is_empty(s)     (bst_size(s))
 
-static __inline__ void bst_init(bst_struct *s, bst_comparator_t pComp)
+static __inline__ void bst_init(bstree_t *s, bst_comparator_t pComp)
 {
     s->size = 0;
     s->root = NULL;
     s->comp = pComp;
 }
 
-static __inline__ void __bst_add(bst_node *cur, struct bst_node *new_ele)
+static __inline__ void __bst_add(bstree_node *cur, struct bstree_node *new_ele)
 {
     signed int comp_ret = s->comp(cur, new_ele);
     if(comp_ret < 0) {
@@ -52,7 +54,8 @@ static __inline__ void __bst_add(bst_node *cur, struct bst_node *new_ele)
     }
 }
 
-static __inline__ void bst_add(bst_struct *s, struct bst_node *new_ele)
+static __inline__ void bst_add(bstree_t *s, struct bstree_node *new_ele)
+
 {
     if (!s->root) {
         s->root = BST_ROOT_INIT(new_ele);
