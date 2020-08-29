@@ -2,7 +2,7 @@
 #define _KUIPER_COMPILER_H_INCLUDED_
 
 
-#include "types.h"
+#include <kuiper/types.h>
 
 /**
  * 关于编译器特性的一些代码,目前KuiperOS只支持使用GCC编译器进行编译

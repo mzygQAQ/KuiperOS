@@ -54,7 +54,10 @@ _start:
     mov ds, ax
     mov es, ax
     mov ss, ax
-    mov sp, BaseOfStack ; The stack swims from high address to low address
+
+    ;设置栈空间,0x7c00-0x500之前大概有30kb的物理内存可以使用
+    ;这个栈大小对于引导程序是十分足够的
+    mov sp, BaseOfStack
 
     ;清除屏幕
     call clean_screen

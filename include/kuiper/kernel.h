@@ -1,7 +1,7 @@
 #ifndef _KUIPER_KERNEL_H_INCLUDED_
 #define _KUIPER_KERNEL_H_INCLUDED_
 
-#include "compiler.h"
+#include <kuiper/compiler.h>
 
 #ifndef __bool_true_false_are_defined
 #define __bool_true_false_are_defined
