@@ -26,7 +26,7 @@ org 0x7c00
 BaseOfStack equ 0x7c00
 
 jmp short _start
-nop	                ; fill to 3 bytes
+nop	                ; jmp short _start 机器码占用2个字节，添加nop填充满3字节，使得符合Fat12FS格式
 
 fat12_header:
     BS_OEMName     db "KuiperOS"
@@ -56,140 +56,73 @@ _start:
     mov ss, ax
     mov sp, BaseOfStack ; The stack swims from high address to low address
 
+    ;清除屏幕
+    call clean_screen
+	
+	;将光标设置到(0,0)处
+	mov dx, 0
+	call set_cursor
+
+    ;输出引导信息
     mov ax, boot_msg
     mov bp, ax
-    mov cx, len_boot_msg
-    call print_str
+    mov cx, BOOT_MSG_LEN
+    call write_string
+	
+	;从磁盘上读取loader程序并将CPU控制权进行转让
+
+
 
 spin:
 	hlt
 	jmp spin
 
-loader_not_found:
-
-
-;
-; @param es:bx : root entry addr
-; @param ds:si : target string
-; @param cx    : target string length
-; @return  dx!=0? exist:notexist
-;                when exist, and the bx is the target entry
-;
-search_entry:
-    mov dx, [BPB_RootEntCnt]    ; max search count
-    mov bp, sp
-_search:
-    cmp dx, 0
-    jz _not_exist
-
-    call memcmp
-    cmp cx, 0
-    jz _exist
-    jmp _search
-_exist:
-_not_exist:
-    ret
-
-; read_sector
-; @param ax    : logic sector nbr
-; @param cx    : total sectors you want read
-; @param es:bx : memeory address you want to write
-; @description:
-; BIOS软驱数据读取:
-; AH=0x02
-; AL=长度(扇区)
-; CH=柱面号 CL=起始的扇区号
-; DH=磁头号 DL=驱动器号
-; ES:BX=读取到内存的地址
-; int 0x13
-read_sector:
+clean_screen:
+    push ax
     push bx
     push cx
     push dx
-    push ax
-
-    call reset_floppy
-
-    push bx
-    push cx
-
-    mov bl, [BPB_SecPerTrk]
-    div bl
-    mov cl, ah
-    add cl, 1
-    mov ch, al
-    shr ch, 1
-    mov dh, al
-    and dh, 1
-    mov dl, [BS_DrvNum]
-
-    pop ax  ; cx -> ax
-    pop bx
-
-    mov ah, 0x02
-read:
-    int 0x13
-    jc read
-    pop ax
+    mov ah, 0x06    ;BIOS中断号
+    mov al, 0
+    mov cx, 0       ;(0,0)
+    mov dx, 0x0c4f  ;(24,79)
+    mov bh, 0x07    ;(黑底白字)
+    int 0x10
     pop dx
     pop cx
     pop bx
-
-    ret
-
-; reset_floppy
-; @param void
-; @description
-; BIOS软驱复位:
-; AH=0x00
-; DL=驱动器号(0表示A盘)
-; int 0x13
-reset_floppy:
-    push ax
-    push dx
-    mov ah, 0x00
-    mov dl, [BS_DrvNum]
-    int 0x13
-    pop dx
     pop ax
     ret
 
-;  print_str implemented by BIOS interupt
-;  @param es:bp : str start
-;  @param cx    : str length
-print_str:
+; DL: x坐标
+; DH: y坐标
+set_cursor:
+	push ax
+	mov ah, 0x2
+	int 10h
+	pop ax
+	ret
+
+; int 10h 0x13号中断
+; AH - 0x13
+; AL - 打印模式 1-光标移动 0-光标不移动
+; BH - 视频页码
+; BL - 如果AL寄存器为 1 或者 0，设置属性
+; CX - 长度
+; DH - 行坐标
+; DL - 纵坐标
+; ES:BP - 指针
+write_string:
+    push ax
+    push bx
     mov ax, 0x1301
     mov bx, 0x0007
     int 0x10
-    ret
-
-; compare the memory if equal or not equal
-; @param ds:si : src
-; @param es:di : dest
-; @param cx    : len
-; @return cx == 0?
-memcmp:
-    push ax
-    push si
-    push di
-_compare:
-    cmp cx, 0
-    jz _equal
-    mov al, [si]
-    cmp al, byte [di]
-    jz _go_on
-    jmp _not_equal
-_go_on:
-    inc si
-    inc di
-    dec cx
-    jmp _compare
-_equal:
-_not_equal:
-    pop di
-    pop si
+    pop bx
     pop ax
     ret
+
+loader_not_found:
 
 ; =========================================
 ; for test case, can be delete after test
@@ -207,9 +140,9 @@ str_noteq:
     db "notequal"
 
 boot_msg:
-    db "DEBUG: Booting..."
+    db "DEBUG: KuiperOS is booting..."
     db 0x0d, 0x0a
-len_boot_msg equ ($ - boot_msg)
+BOOT_MSG_LEN equ ($ - boot_msg)
 
 str_loader_not_found:
     db "ERROR: Loader not found"

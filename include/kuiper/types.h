@@ -35,14 +35,6 @@ extern "C" {
 #define NULL ((void *)0)
 #endif
 
-#ifndef __asm__
-#define __asm__ asm
-#endif
-
-#ifndef __volatile__
-#define __volatile__ volatile
-#endif
-
 typedef long unsigned int    size_t;
 typedef int                  ptrdiff_t;
 typedef int                  pid_t;

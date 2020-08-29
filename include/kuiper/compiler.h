@@ -15,6 +15,22 @@
  *
  */
 
+#ifndef __asm__
+#define __asm__ asm
+#endif
+
+#ifndef __volatile__
+#define __volatile__ volatile
+#endif
+
+#ifndef __inline__
+#define __inline__ inline
+#endif
+
+#ifndef __always_inline
+#define __always_inline inline
+#endif
+
 #define offsetof(type,member) ((size_t)&(((type*)0)->member))
 
 #define container_of(ptr, type, member) ({ \
@@ -25,14 +41,6 @@
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
-#ifndef __inline__
-#define __inline__ inline
-#endif
-
-#ifndef __always_inline
-#define __always_inline inline
-#endif
-
-#define ACCESS_ONCE(x) (*(volatile typeof(x))(&(x)))
+#define ACCESS_ONCE(x) (*(__volatile__ typeof(x))(&(x)))
 
 #endif
