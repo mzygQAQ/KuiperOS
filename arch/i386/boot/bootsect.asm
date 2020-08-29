@@ -26,28 +26,29 @@ org 0x7c00
 BaseOfStack equ 0x7c00
 
 jmp short _start
-nop	                ; jmp short _start 机器码占用2个字节，添加nop填充满3字节，使得符合Fat12FS格式
+nop	                                    ; jmp short _start 机器码占用2个字节，添加nop填
+                                        ; 充满3字节，使得符合Fat12FS格式
 
 fat12_header:
-    BS_OEMName     db "KuiperOS"
-    BPB_BytsPerSec dw 512
-    BPB_SecPerClus db 1
-    BPB_RsvdSecCnt dw 1
-    BPB_NumFATs    db 2
-    BPB_RootEntCnt dw 224
-    BPB_TotSec16   dw 2880
-    BPB_Media      db 0xF0
-    BPB_FATSz16    dw 9
-    BPB_SecPerTrk  dw 18
-    BPB_NumHeads   dw 2
-    BPB_HiddSec    dd 0
-    BPB_TotSec32   dd 0
-    BS_DrvNum      db 0
-    BS_Reserved1   db 0
-    BS_BootSig     db 0x29
-    BS_VolID       dd 0
-    BS_VolLab      db "KuiperOSSSS"
-    BS_FileSysType db "FAT12   "
+    BS_OEMName     db "KuiperOS"        ; OEM字符串必须为8字节
+    BPB_BytsPerSec dw 512               ; 每个扇区的字节数
+    BPB_SecPerClus db 1                 ; 每簇占用的扇区数
+    BPB_RsvdSecCnt dw 1                 ; 引导程序占用的扇区数
+    BPB_NumFATs    db 2                 ; FAT表的记录数
+    BPB_RootEntCnt dw 224               ; 最大根目录文件数
+    BPB_TotSec16   dw 2880              ; 逻辑扇区总数量
+    BPB_Media      db 0xF0              ; 媒体描述符(暂不知道用处)
+    BPB_FATSz16    dw 9                 ; 每个FAT占用的扇区数量
+    BPB_SecPerTrk  dw 18                ; 每个磁道的扇区数
+    BPB_NumHeads   dw 2                 ; 磁头的数量
+    BPB_HiddSec    dd 0                 ; 隐藏的扇区数
+    BPB_TotSec32   dd 0                 ; ??
+    BS_DrvNum      db 0                 ; 中断13的驱动器号
+    BS_Reserved1   db 0                 ; 尚未使用
+    BS_BootSig     db 0x29              ; 扩展引导标志
+    BS_VolID       dd 0                 ; 卷序列号
+    BS_VolLab      db "KuiperOSSSS"     ; 卷标必须为11字节
+    BS_FileSysType db "FAT12   "        ; 文件系统的类型 必须8字节
 
 _start:
     mov ax, cs
@@ -73,8 +74,6 @@ _start:
     call write_string
 	
 	;从磁盘上读取loader程序并将CPU控制权进行转让
-
-
 
 spin:
 	hlt

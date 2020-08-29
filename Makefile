@@ -15,16 +15,11 @@ all : $(OUT) $(IMG)
 	dd if=$(OUT) of=$(IMG) bs=512 count=1 conv=notrunc
 	@echo "build success..."
   
-$(IMG) : 
-	cd build
-	bximage $@ -q -fd -size=1.44
-	cd ..
-
 $(OUT) : $(SRC)
 	nasm $^ -o $@
 
 clean :
-	$(RM) $(IMG) $(OUT) *.o
+	$(RM) $(OUT) *.o
 
 rebuild :
 	@$(MAKE) clean
