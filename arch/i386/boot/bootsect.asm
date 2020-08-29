@@ -72,8 +72,8 @@ _start:
     mov bp, ax
     mov cx, BOOT_MSG_LEN
     call write_string
-	
-    ;从磁盘上读取loader程序并将CPU控制权进行转让
+
+    ;
 
 spin:
     hlt
@@ -101,7 +101,7 @@ clean_screen:
 set_cursor:
     push ax
     mov ah, 0x2
-    int 10h
+    int 0x10
     pop ax
     ret
 
@@ -124,7 +124,45 @@ write_string:
     pop ax
     ret
 
-loader_not_found:
+; BIOS 0x13 00号软驱复位
+; AH=0x00 DL=驱动器号
+; NO_ARGUMENT
+reset_floppy:
+    push ax
+    push dx
+    mov ax, 0x00
+    mov dl, [BS_DrvNum]    ; 0代表A盘
+    int 0x13
+    pop dx
+    pop ax
+    ret
+
+;从磁盘读取数据到内
+;入参1： AX:传入逻辑扇区号
+;入参2： CX:需要读取的扇区数
+;入参3： ES:BX:读取到的内存地址
+;
+;参考:
+;0x13号中断 0x02号功能号
+;AH=0x02
+;AL=长度(扇区数)
+;CH=柱面号
+;CL=起始扇区号
+;DH=磁头号
+;DL=驱动器号
+;ES:BP=读取到的内存地址
+read_from_floppy:
+    pusha
+    call reset_floppy
+    ; AX参数已就绪
+    mov bl, [BPB_SecPerTrk]
+    div bl
+    ;IRQ
+    mov ah, 0x02
+    int 0x13
+    popa
+    ret
+
 
 ; =========================================
 ; for test case, can be delete after test
@@ -146,10 +184,10 @@ boot_msg:
     db 0x0d, 0x0a
 BOOT_MSG_LEN equ ($ - boot_msg)
 
-str_loader_not_found:
-    db "ERROR: Loader not found"
+no_loader_msg:
+    db "ERROR: Cannot find the loader program!"
     db 0x0d, 0x0a
-len_loader_not_found equ ($ - str_loader_not_found)
+NO_LOADER_MSG_LEN equ ($ - no_loader_msg)
 
 times 510-($-$$) db 0x00
 
