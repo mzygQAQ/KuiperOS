@@ -63,9 +63,9 @@ _start:
     ;清除屏幕
     call clean_screen
 	
-	;将光标设置到(0,0)处
-	mov dx, 0
-	call set_cursor
+    ;将光标设置到(0,0)处
+    mov dx, 0
+    call set_cursor
 
     ;输出引导信息
     mov ax, boot_msg
@@ -73,11 +73,11 @@ _start:
     mov cx, BOOT_MSG_LEN
     call write_string
 	
-	;从磁盘上读取loader程序并将CPU控制权进行转让
+    ;从磁盘上读取loader程序并将CPU控制权进行转让
 
 spin:
-	hlt
-	jmp spin
+    hlt
+    jmp spin
 
 clean_screen:
     push ax
@@ -99,11 +99,11 @@ clean_screen:
 ; DL: x坐标
 ; DH: y坐标
 set_cursor:
-	push ax
-	mov ah, 0x2
-	int 10h
-	pop ax
-	ret
+    push ax
+    mov ah, 0x2
+    int 10h
+    pop ax
+    ret
 
 ; int 10h 0x13号中断
 ; AH - 0x13
