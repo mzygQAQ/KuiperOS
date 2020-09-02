@@ -39,7 +39,7 @@ fat12_header:
     BPB_TotSec16   dw 2880              ; 逻辑扇区总数量
     BPB_Media      db 0xF0              ; 媒体描述符(暂不知道用处)
     BPB_FATSz16    dw 9                 ; 每个FAT占用的扇区数量
-    BPB_SecPerTrk  dw 18                ; 每个磁道的扇区数
+    BPB_SecPerTrk  dw 18                ; 每个柱面的扇区数
     BPB_NumHeads   dw 2                 ; 磁头的数量
     BPB_HiddSec    dd 0                 ; 隐藏的扇区数
     BPB_TotSec32   dd 0                 ; ??
@@ -73,7 +73,16 @@ _start:
     mov cx, BOOT_MSG_LEN
     call write_string
 
-    ;
+    ;test read
+    mov ax, 42
+    mov cx, 1
+    mov bx, buffer
+    call read_from_floppy
+
+    ;write
+    mov bp, buffer
+    mov cx, 16
+    call write_string
 
 spin:
     hlt
@@ -142,6 +151,7 @@ reset_floppy:
 ;入参2： CX:需要读取的扇区数
 ;入参3： ES:BX:读取到的内存地址
 ;
+;
 ;参考:
 ;0x13号中断 0x02号功能号
 ;AH=0x02
@@ -150,20 +160,43 @@ reset_floppy:
 ;CL=起始扇区号
 ;DH=磁头号
 ;DL=驱动器号
-;ES:BP=读取到的内存地址
+;ES:BX=读取到的内存地址
 read_from_floppy:
     pusha
+
+    ;先保存读取的扇区数
+    push bx
+    push cx
+
     call reset_floppy
-    ; AX参数已就绪
+
+    ;AX在参数已就绪
     mov bl, [BPB_SecPerTrk]
     div bl
-    ;IRQ
+    ;计算扇区号
+    mov cl, ah
+    add cl, 1
+    ;计算柱面号
+    mov ch, al
+    shr ch, 1
+    ;计算磁头号
+    mov dh, al
+    and dh, 1
+    ;计算驱动器号0代表A盘
+    mov dl, [BS_DrvNum]
+
+    pop ax; cx->ax
+    pop bx
     mov ah, 0x02
+_read_again:
     int 0x13
+    jc _read_again
+
     popa
     ret
 
-
+; buffer
+buffer:
 ; =========================================
 ; for test case, can be delete after test
 test_case:
