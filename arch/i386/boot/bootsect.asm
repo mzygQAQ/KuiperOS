@@ -96,7 +96,7 @@ clean_screen:
     mov ah, 0x06    ;BIOS中断号
     mov al, 0
     mov cx, 0       ;(0,0)
-    mov dx, 0x0c4f  ;(24,79)
+    mov dx, 0x184f  ;(24,79)
     mov bh, 0x07    ;(黑底白字)
     int 0x10
     pop dx
