@@ -73,39 +73,26 @@ _start:
     mov cx, BOOT_MSG_LEN
     call write_string
 
-    ;test read
-    ;mov ax, 42
-    ;mov cx, 1
-    ;mov bx, buffer
-    ;call read_from_floppy
-	;mov dx, 0x0100
-	;call set_cursor
-    ;write
-    ;mov bp, buffer
-    ;mov cx, 16
-    ;call write_string
-
-	;test memcmp
-	mov dx, 0x0200
-    call set_cursor
-	mov si, str_src
-	mov di, str_dest
-	mov cx, 0x02
-	call memcmp
-	cmp cx, 0x00
-	jz write_eq
-	jmp write_ne
-
-write_eq:
-	mov bp, str_eq
-	mov cx, 5
-	call write_string
+	;加载根目录区 位于19逻辑扇区(1MBR+9FAT+9FAT2) 共14个扇区
+	mov ax, 0x13
+	mov cx, 0x0e
+	mov bx, buffer
+	call read_from_floppy
+	
+	;查找LOADER.BIN
+	mov si, loader_filename
+	mov cx, LOADER_FILENAME_LEN
+	call search_root_entry
+	cmp dx, 0
+	je write_loader_notfound
 	jmp spin
-write_ne:
-	mov bp, str_ne
-	mov cx, 8
+
+write_loader_notfound:
+	mov dx, 0x0100
+	call set_cursor
+	mov bp, no_loader_msg
+	mov cx, NO_LOADER_MSG_LEN
 	call write_string
-	jmp spin
 
 spin:
     hlt
@@ -218,6 +205,37 @@ _read_again:
     popa
     ret
 
+;在根目录区查找指定的文件
+;每个根目录下占用32字节
+;@param es:bx 根目录的起始偏移地址
+;@param ds:si 文件名
+;@param cx 文件名长度
+;@return dx == 0 ? notfound : found
+search_root_entry:
+	push cx
+	push bp
+	push di
+	mov dx, [BPB_RootEntCnt]
+	mov bp, cx
+_next:
+	cmp dx, 0
+	jz _notfound
+	mov di, bx
+	mov cx, bp	;根目录文件名占用11字节 memcmp会改变cx,用bp存
+	call memcmp
+	cmp cx, 0
+	jz _found
+
+	add bx, 32
+	dec dx
+	jmp _next
+_found:
+_notfound:
+	pop di
+	pop bp
+	pop cx
+	ret
+
 ; 内存比较,比较的长度不能超过一个段的大小
 ;@param ds:si
 ;@param es:di
@@ -259,18 +277,23 @@ str_eq:
 
 str_ne:
     db "notequal"
-buffer:
-	db "floppy data will recover here..."
 
 boot_msg:
     db "DEBUG: KuiperOS is booting..."
     db 0x0d, 0x0a
 BOOT_MSG_LEN equ ($ - boot_msg)
 
+loader_filename:
+	db "LOADER  BIN"
+LOADER_FILENAME_LEN equ ($ - loader_filename)
+
 no_loader_msg:
-    db "ERROR: Cannot find the loader program!"
+    db "PANIC: LOADER.BIN was not found!"
     db 0x0d, 0x0a
 NO_LOADER_MSG_LEN equ ($ - no_loader_msg)
+
+buffer:
+	db "floppy data will recover here..."
 
 times 510-($-$$) db 0x00
 
