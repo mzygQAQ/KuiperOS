@@ -74,15 +74,38 @@ _start:
     call write_string
 
     ;test read
-    mov ax, 42
-    mov cx, 1
-    mov bx, buffer
-    call read_from_floppy
-
+    ;mov ax, 42
+    ;mov cx, 1
+    ;mov bx, buffer
+    ;call read_from_floppy
+	;mov dx, 0x0100
+	;call set_cursor
     ;write
-    mov bp, buffer
-    mov cx, 16
-    call write_string
+    ;mov bp, buffer
+    ;mov cx, 16
+    ;call write_string
+
+	;test memcmp
+	mov dx, 0x0200
+    call set_cursor
+	mov si, str_src
+	mov di, str_dest
+	mov cx, 0x02
+	call memcmp
+	cmp cx, 0x00
+	jz write_eq
+	jmp write_ne
+
+write_eq:
+	mov bp, str_eq
+	mov cx, 5
+	call write_string
+	jmp spin
+write_ne:
+	mov bp, str_ne
+	mov cx, 8
+	call write_string
+	jmp spin
 
 spin:
     hlt
@@ -195,22 +218,49 @@ _read_again:
     popa
     ret
 
-; buffer
-buffer:
-; =========================================
+; 内存比较,比较的长度不能超过一个段的大小
+;@param ds:si
+;@param es:di
+;@param cx
+;@return cx==0?eq:ne
+memcmp:
+	push ax
+	push si
+	push di
+_comp:
+	cmp cx, 0x00
+	jz _eq
+	mov al, byte [si]
+	cmp al, byte [di]
+	jne _ne
+_conti:
+	inc si
+	inc di
+	dec cx
+	jmp _comp
+_eq:
+_ne:
+	pop di
+	pop si
+	pop ax
+	ret
+
+
 ; for test case, can be delete after test
 test_case:
 str_src:
-    db "str2"
+    db "st1"
 str_dest:
-    db "str2"
+    db "sr1"
 ; =========================================
 
 str_eq:
     db "equal"
 
-str_noteq:
+str_ne:
     db "notequal"
+buffer:
+	db "floppy data will recover here..."
 
 boot_msg:
     db "DEBUG: KuiperOS is booting..."
