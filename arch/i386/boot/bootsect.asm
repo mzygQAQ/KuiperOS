@@ -85,6 +85,16 @@ _start:
 	call search_root_entry
 	cmp dx, 0
 	je write_loader_notfound
+
+	;查找到LOADER.BIN后加载FAT表到内存中.
+	;一个8086段最大64kb即0x0000:0x0000-0x0000:0x10000也就意味着0x9000-0x10000之
+	;间大概有28kb的物理内存,我们要将LOADER程序的控制在28kb以内，否则就要修改段寄存器了.
+	;BIOS提供的读取磁盘的中断不太清楚是否可以跨段处理。
+    mov bx, 0x9000	
+	call load_fat
+    
+	;读取LOADER.BIN的内容到内存0x9000其实位置，然后将CPU交给LOADER执行
+
 	jmp spin
 
 write_loader_notfound:
@@ -236,6 +246,20 @@ _notfound:
 	pop cx
 	ret
 
+;加载FAT表到内存中
+;@param es:bp 加载到到内存地址
+;fat1位于软盘的MBR之后，从1扇区开始，共9个扇区
+load_fat:
+    push ax
+    push cx
+    mov ax, 1
+	mov cx, 8
+	call read_from_floppy
+	pop cx
+	pop ax
+	ret
+		
+		
 ; 内存比较,比较的长度不能超过一个段的大小
 ;@param ds:si
 ;@param es:di
