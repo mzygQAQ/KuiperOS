@@ -253,7 +253,7 @@ load_fat:
     push ax
     push cx
     mov ax, 1
-	mov cx, 8
+	mov cx, 9
 	call read_from_floppy
 	pop cx
 	pop ax
