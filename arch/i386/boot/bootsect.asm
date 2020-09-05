@@ -268,6 +268,14 @@ _ne:
     pop ax
     ret
 
+; 内存复制
+;@param ds:si
+;@param es:di
+;@param cx
+memcpy:
+    cld
+    rep movsb
+    ret
 
 ; for test case, can be delete after test
 test_case:
