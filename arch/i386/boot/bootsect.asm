@@ -70,10 +70,6 @@ _start:
     ;查找到LOADER.BIN后加载FAT表到内存中.
     ;一个8086段最大64kb即0x0000:0x0000-0x0000:0x10000也就意味着0x9000-0x10000之
     ;间大概有28kb的物理内存,我们要将LOADER程序的控制在28kb以内，否则就要修改段寄存器了.
-    ;BIOS提供的读取磁盘的中断不太清楚是否可以跨段处理。
-    mov bx, 0x9000  
-    call load_fat
-    
     ;读取LOADER.BIN的内容到内存0x9000其实位置，然后将CPU交给LOADER执行
     ;TODO
     jmp spin
@@ -227,19 +223,41 @@ _notfound:
     pop cx
     ret
 
-;加载FAT表到内存中
-;@param es:bp 加载到到内存地址
-;fat1位于软盘的MBR之后，从1扇区开始，共9个扇区
-load_fat:
+;@param bx fat表的地址入口
+;@param cx fatitem的索引
+;@param dx fatValue
+read_fat_item:
+    mov ax, cx
+    mov cl, 2
+    div cl
     push ax
-    push cx
-    mov ax, 1
-    mov cx, 9
-    call read_from_floppy
-    pop cx
+    mov ah, 0
+    mov cx, 3
+    mul cx
+    mov cx, ax ; b
     pop ax
+    cmp ah, 0
+    jz _idx_even
+    jmp _idx_odd
+_idx_even:
+    ; (fat[b+1] & 0x0f) << 8 | fat[b]
+    mov dx, cx
+    add dx, 1
+    add dx, bx
+    mov bp, dx
+    mov dl, byte [bp]
+    and dx, 0x0f
+    shl dx, 8
+    add cx, bx
+    mov bp, cx
+    or dl, byte [bp]
+    jmp _rfi_done
+_idx_odd:
+    ; fat[b+2] << 4 | (fat[b+1] & 0xf0) >> 4
+    ; TODO
+    jmp _rfi_done
+_rfi_done:
     ret
-        
         
 ; 内存比较,比较的长度不能超过一个段的大小
 ;@param ds:si
@@ -268,7 +286,7 @@ _ne:
     pop ax
     ret
 
-; 内存复制
+; 内存复制,暂未考虑内存重叠问题,请谨慎使用
 ;@param ds:si
 ;@param es:di
 ;@param cx
