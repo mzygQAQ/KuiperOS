@@ -4,36 +4,34 @@
 
 org 0x7c00
 
-BaseOfStack  equ 0x7c00
-AddrOfLoader equ 0x9000
-FatSectStart equ 1
-FatSectLen   equ 9
+BaseOfStack equ 0x7c00
 
-jmp short __start
+jmp short _start
 nop                                     ; jmp short _start 机器码占用2个字节，添加nop填
+                                        ; 充满3字节，使得符合Fat12FS格式
 
 fat12_header:
-    BS_OEMName     db "KuiperOS"
-    BPB_BytsPerSec dw 512
-    BPB_SecPerClus db 1
-    BPB_RsvdSecCnt dw 1
-    BPB_NumFATs    db 2
-    BPB_RootEntCnt dw 224
-    BPB_TotSec16   dw 2880
-    BPB_Media      db 0xF0
-    BPB_FATSz16    dw 9
-    BPB_SecPerTrk  dw 18
-    BPB_NumHeads   dw 2
-    BPB_HiddSec    dd 0
-    BPB_TotSec32   dd 0
-    BS_DrvNum      db 0
-    BS_Reserved1   db 0
-    BS_BootSig     db 0x29
-    BS_VolID       dd 0
-    BS_VolLab      db "KuiperOSSSS"
-    BS_FileSysType db "FAT12   "
+    BS_OEMName     db "KuiperOS"        ; OEM字符串必须为8字节
+    BPB_BytsPerSec dw 512               ; 每个扇区的字节数
+    BPB_SecPerClus db 1                 ; 每簇占用的扇区数
+    BPB_RsvdSecCnt dw 1                 ; 引导程序占用的扇区数
+    BPB_NumFATs    db 2                 ; FAT表的记录数
+    BPB_RootEntCnt dw 224               ; 最大根目录文件数
+    BPB_TotSec16   dw 2880              ; 逻辑扇区总数量
+    BPB_Media      db 0xF0              ; 媒体描述符(暂不知道用处)
+    BPB_FATSz16    dw 9                 ; 每个FAT占用的扇区数量
+    BPB_SecPerTrk  dw 18                ; 每个柱面的扇区数
+    BPB_NumHeads   dw 2                 ; 磁头的数量
+    BPB_HiddSec    dd 0                 ; 隐藏的扇区数
+    BPB_TotSec32   dd 0                 ; ??
+    BS_DrvNum      db 0                 ; 中断13的驱动器号
+    BS_Reserved1   db 0                 ; 尚未使用
+    BS_BootSig     db 0x29              ; 扩展引导标志
+    BS_VolID       dd 0                 ; 卷序列号
+    BS_VolLab      db "KuiperOSSSS"     ; 卷标必须为11字节
+    BS_FileSysType db "FAT12   "        ; 文件系统的类型 必须8字节
 
-__start:
+_start:
     mov ax, cs
     mov ds, ax
     mov es, ax
@@ -44,7 +42,7 @@ __start:
     mov sp, BaseOfStack
 
     ;清除屏幕
-    ;call clean_screen
+    call clean_screen
     
     ;将光标设置到(0,0)处
     mov dx, 0
@@ -60,7 +58,7 @@ __start:
     mov ax, 0x13
     mov cx, 0x0e
     mov bx, buffer
-    call read_sect
+    call read_from_floppy
     
     ;查找LOADER.BIN
     mov si, loader_filename
@@ -73,30 +71,16 @@ __start:
     ;这里单独将其拷贝出来
     mov si, bx
     mov di, loader_bin_dir_entry
-    mov cx, 32  ; 每个FAT12根目录项占32个字节
+    mov cx, 32
     call memcpy
 
 
-    ;LOAD FAT1
-    mov ax, FatSectLen
-    mov cx, [BPB_BytsPerSec]
-    mul cx
-    mov bx, AddrOfLoader
-    sub bx, ax  ;bx->FatStartAddr
-    
-    mov ax, FatSectStart
-    mov cx, FatSectLen
-    call read_sect
 
     ;查找到LOADER.BIN后加载FAT表到内存中.
     ;一个8086段最大64kb即0x0000:0x0000-0x0000:0x10000也就意味着0x9000-0x10000之
     ;间大概有28kb的物理内存,我们要将LOADER程序的控制在28kb以内，否则就要修改段寄存器了.
     ;读取LOADER.BIN的内容到内存0x9000其实位置，然后将CPU交给LOADER执行
-    
-    ;获取LOADER.BIN的起始簇
-    mov cx, [loader_bin_dir_entry + 0x1a]
-    call read_fat_item
-
+    ;TODO
     jmp spin
 
 write_loader_notfound:
@@ -110,22 +94,22 @@ spin:
     hlt
     jmp spin
 
-;clean_screen:
-;    push ax
-;    push bx
-;    push cx
-;    push dx
-;    mov ah, 0x06    ;BIOS中断号
-;    mov al, 0
-;    mov cx, 0       ;(0,0)
-;    mov dx, 0x184f  ;(24,79)
-;    mov bh, 0x07    ;(黑底白字)
-;    int 0x10
-;    pop dx
-;    pop cx
-;    pop bx
-;    pop ax
-;    ret
+clean_screen:
+    push ax
+    push bx
+    push cx
+    push dx
+    mov ah, 0x06    ;BIOS中断号
+    mov al, 0
+    mov cx, 0       ;(0,0)
+    mov dx, 0x184f  ;(24,79)
+    mov bh, 0x07    ;(黑底白字)
+    int 0x10
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
 
 ; DL: x坐标
 ; DH: y坐标
@@ -183,7 +167,7 @@ reset_floppy:
 ;DH=磁头号
 ;DL=驱动器号
 ;ES:BX=读取到的内存地址
-read_sect:
+read_from_floppy:
     pusha
 
     ;先保存读取的扇区数
@@ -336,6 +320,7 @@ memcpy:
 
 boot_msg:
     db "DEBUG: KuiperOS is booting..."
+    db 0x0d, 0x0a
 BOOT_MSG_LEN equ ($ - boot_msg)
 
 loader_filename:
@@ -344,14 +329,15 @@ LOADER_FILENAME_LEN equ ($ - loader_filename)
 
 no_loader_msg:
     db "PANIC: LOADER.BIN was not found!"
+    db 0x0d, 0x0a
 NO_LOADER_MSG_LEN equ ($ - no_loader_msg)
 
 ;LOADER.BIN的根目录项32字节将会加载到这里
 loader_bin_dir_entry:
-    times 32 db 0x00
+    ;times 32 db 0x00 这里不预留空间,因为MBR512字节不够了o(╯□╰)o
 
 buffer:
-    db 0x00
+    db "floppy data will recover here..."
 
 times 510-($-$$) db 0x00
 

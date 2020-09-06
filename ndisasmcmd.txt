@@ -1,0 +1,2 @@
+# ndisasm -o 0x7c00 -e 62 build/boot.bin
+ ndisasm -o 0x7c3e -e 62 build/boot.bin
