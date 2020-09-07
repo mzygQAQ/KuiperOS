@@ -7,19 +7,30 @@ CFLAGS=-g
 BIN=kbin
 LIBS=-I./include
 
-SRC := ./arch/i386/boot/bootsect.asm
-OUT := ./build/boot.bin
-IMG := ./build/data.img
+BOOT_SRC   := ./arch/i386/boot/bootsect.asm
+BOOT_OUT   := ./build/boot.bin
 
-all : $(OUT) $(IMG)
-	dd if=$(OUT) of=$(IMG) bs=512 count=1 conv=notrunc
+LOADER_SRC := ./arch/i386/boot/loader.asm
+LOADER_OUT := ./build/loader.bin
+
+IMG := ./build/data.img
+IMG_MNT_PATH := /data/mnt
+
+all : $(BOOT_OUT) $(LOADER_OUT) $(IMG)
 	@echo "build success..."
   
-$(OUT) : $(SRC)
+$(BOOT_OUT) : $(BOOT_SRC)
 	nasm $^ -o $@
+	dd if=$(BOOT_OUT) of=$(IMG) bs=512 count=1 conv=notrunc
+
+$(LOADER_OUT) : $(LOADER_SRC)
+	nasm $^ -o $@
+	sudo mount -o loop $(IMG) $(IMG_MNT_PATH)
+	sudo cp $@ $(IMG_MNT_PATH)/$@
+	sudo umount $(IMG_MNT_PATH)
 
 clean :
-	$(RM) $(OUT) *.o
+	$(RM) $(BOOT_OUT) $(LOADER_OUT) *.o
 
 rebuild :
 	@$(MAKE) clean
