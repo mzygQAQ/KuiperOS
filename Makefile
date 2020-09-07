@@ -14,7 +14,7 @@ LOADER_SRC := ./arch/i386/boot/loader.asm
 LOADER_OUT := ./build/loader.bin
 
 IMG := ./build/data.img
-IMG_MNT_PATH := /data/mnt
+IMG_MNT_PATH := /home/mzygmzyg1996/mnt
 
 all : $(BOOT_OUT) $(LOADER_OUT) $(IMG)
 	@echo "build success..."
@@ -26,7 +26,7 @@ $(BOOT_OUT) : $(BOOT_SRC)
 $(LOADER_OUT) : $(LOADER_SRC)
 	nasm $^ -o $@
 	sudo mount -o loop $(IMG) $(IMG_MNT_PATH)
-	sudo cp $@ $(IMG_MNT_PATH)/$@
+	sudo cp $@ $(IMG_MNT_PATH)/loader.bin
 	sudo umount $(IMG_MNT_PATH)
 
 clean :

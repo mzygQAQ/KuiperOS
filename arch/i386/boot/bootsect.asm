@@ -294,22 +294,37 @@ _idx_even:
     jmp _rfi_done
 _idx_odd:
     ; fat[b+2] << 4 | (fat[b+1] & 0xf0) >> 4
-    mov dx, cx
-    add dx, 1
-    add dx, bx
-    mov bp, dx
-    mov dl, byte [bp]
-    and dl, 0xf0
-    xor dh, dh
-    shr dx, 4
-    add cx, bx
-    add cx, 2
-    mov bp, cx
-    mov al, byte [bp]
-    xor ax, ax
-    shl ax, 4   ; must 16 register shl
-    or dx, ax
-    jmp _rfi_done
+    ;mov dx, cx
+    ;add dx, 1
+    ;add dx, bx
+    ;mov bp, dx
+    ;mov dl, byte [bp]
+    ;and dl, 0xf0
+    ;xor dh, dh
+    ;shr dx, 4
+    ;add cx, bx
+    ;add cx, 2
+    ;mov bp, cx
+    ;mov al, byte [bp]
+    ;xor ax, ax
+    ;shl ax, 4   ; must 16 register shl
+    ;or dx, ax
+	mov dx, cx
+	add dx, 2
+	add dx, bx
+	mov bp, dx
+	mov dl, byte [bp]
+	mov dh, 0
+	shl dx, 4
+	add cx, 1
+	add cx, bx
+	mov bp, cx
+	mov cl, byte [bp]
+	shr cl, 4
+	add cl, 0x0f
+	mov ch, 0
+	or  dx, cx   
+	jmp _rfi_done
 _rfi_done:
     ret
         
