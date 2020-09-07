@@ -46,9 +46,10 @@ __start:
     ;清除屏幕(512b内存不够，直接删除清屏，到保护模式再进行操作)
     ;call clean_screen
     
-    ;将光标设置到(0,0)处
-    mov dx, 0
-    call set_cursor
+    ;将光标设置到(0,0)处(内存还是不够,就不设置光标位置了)
+    ;mov dx, 0
+    ;call set_cursor
+
 
     ;输出引导信息
     mov ax, boot_msg
@@ -83,7 +84,6 @@ __start:
     mul cx
     mov bx, AddrOfLoader
     sub bx, ax  ;bx->FatStartAddr
-    
     mov ax, FatSectStart
     mov cx, FatSectLen
     call read_sect
@@ -94,14 +94,29 @@ __start:
     ;读取LOADER.BIN的内容到内存0x9000其实位置，然后将CPU交给LOADER执行
     
     ;获取LOADER.BIN的起始簇
-    mov cx, [loader_bin_dir_entry + 0x1a]
+    mov dx, [loader_bin_dir_entry + 0x1a]
+    mov si, AddrOfLoader
+load_load:
+    mov ax, dx
+    add ax, 31  ;根目录项最多224个文件项每个32字节 224*32/512=14扇区,也就意味着数据区从19+14=33扇区开始.
+    mov cx, 1
+    push dx
+    push bx
+    mov bx, si
+    call read_sect
+    pop bx
+    pop cx; dx->cx
     call read_fat_item
+    cmp dx, 0xff7
+    jnb AddrOfLoader    ;如果读完则直接跳转loader.bin
+    add si, 512
+    jmp load_load
 
+    ; 如果LOADER.BIN存在,则不会执行到这里
     jmp spin
 
 write_loader_notfound:
     mov dx, 0x0100
-    call set_cursor
     mov bp, no_loader_msg
     mov cx, NO_LOADER_MSG_LEN
     call write_string
@@ -129,12 +144,12 @@ spin:
 
 ; DL: x坐标
 ; DH: y坐标
-set_cursor:
-    push ax
-    mov ah, 0x2
-    int 0x10
-    pop ax
-    ret
+;set_cursor:
+;    push ax
+;    mov ah, 0x2
+;    int 0x10
+;    pop ax
+;    ret
 
 ; int 10h 0x13号中断
 ; AH - 0x13
@@ -335,7 +350,7 @@ memcpy:
     ret
 
 boot_msg:
-    db "DEBUG: KuiperOS is booting..."
+    db "KuiperOS booting"
 BOOT_MSG_LEN equ ($ - boot_msg)
 
 loader_filename:
@@ -343,7 +358,7 @@ loader_filename:
 LOADER_FILENAME_LEN equ ($ - loader_filename)
 
 no_loader_msg:
-    db "PANIC: LOADER.BIN was not found!"
+    db "LOADER not found"
 NO_LOADER_MSG_LEN equ ($ - no_loader_msg)
 
 ;LOADER.BIN的根目录项32字节将会加载到这里
