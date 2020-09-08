@@ -1,15 +1,15 @@
-%include "./asm-defs.asm.h"
+%include "asm-defs.asm.h"
 
 org 0x9000
 
-jmp short __loader_start
+jmp CODE16_SEGMENT
 
 ;======================================================================================
 
 [section .gdt]
-;							    段基址		段界限		段属性
-GDT_ENTRY	    : Descriptor 	0,		   0,		  0		            ;第0个描述符占位不使用
-CODE32_DSCPT    : Descriptor    0,         0,         DA_C + DA_32     ;
+;							    段基址		段界限							段属性
+GDT_ENTRY		: Descriptor 	0,		   0,								0		            ;第0个描述符占位不使用
+CODE32_DESC		: Descriptor    0,         CODE32_SEGMENT_LEN - 1,			DA_C + DA_32		;
 
 GDT_LEN	equ $ - GDT_ENTRY					                            ;全局描述符表的长度
 GDT_PTR:
@@ -21,70 +21,56 @@ GDT_PTR:
 Code32Selector  equ (0x001 << 3) + SA_TIG + SA_RPL0
 
 
-__loader_start:
+[section .s16]
+[bits 16]
+CODE16_SEGMENT:
 	mov ax, cs
 	mov ds, ax
 	mov es, ax
+	mov ss, ax
+	mov sp, 0x7c00
 
-    call clean_screen
-	
-	mov dx, 0
-	call set_cursor
+	;初始化CODE32_DESC的段基址,.gdt中定义的是0,这里需要设置为正确的
+	xor eax, eax
+	mov ax, cs
+	shl eax, 4
+	add eax, CODE32_SEGMENT
+	mov word [CODE32_DESC + 2], ax	;ax 16bit part1
+	shr eax, 16
+	mov byte [CODE32_DESC + 4], al	;part2
+	mov byte [CODE32_DESC + 7], ah	;part3
 
-	mov bp, loader_entry_log
-	mov cx, LOADER_ENTRY_LOG_LEN
-	call write_string
+	;设置GDT_PTR,.gd中定义的是0,这里需要设置成正确的值
+	xor eax, eax
+	mov ax, ds
+	shl eax, 4
+	add eax, GDT_ENTRY
+	mov dword [GDT_PTR + 2], eax
+
+	;加载GDT
+	lgdt [GDT_PTR]
+
+	;关闭中断
+	cli
+
+	;打开A20
+	in al, 0x92
+	or al, 00000010b
+	out 0x92, al
+
+	;设置CR0寄存器 跳转到32位保护模式
+	xor eax,eax
+	mov eax, cr0
+	or eax, 0x01
+	mov cr0, eax
+
+	jmp dword Code32Selector : 0
 
 
+[section .s32]
+[bits 32]
+CODE32_SEGMENT:
+	xor eax, eax
+	jmp CODE32_SEGMENT
 
-
-_spin:
-	nop
-	jmp _spin
-
-;DL: x
-;DH: y
-set_cursor:
-	push ax
-	mov ah, 0x02
-	int 0x10
-	pop ax
-	ret
-clean_screen:
-    push ax
-    push bx
-    push cx
-    push dx
-    mov ah, 0x06    ;BIOS中断号
-    mov al, 0
-    mov cx, 0       ;(0,0)
-    mov dx, 0x184f  ;(24,79)
-    mov bh, 0x07    ;(黑底白字)
-    int 0x10
-    pop dx
-    pop cx
-    pop bx
-    pop ax
-    ret
-
-; int 10h 0x13号中断
-; AH - 0x13
-; AL - 打印模式 1-光标移动 0-光标不移动
-; BH - 视频页码
-; BL - 如果AL寄存器为 1 或者 0，设置属性
-; CX - 长度
-; DH - 行坐标
-; DL - 纵坐标
-; ES:BP - 指针
-write_string:
-    push ax
-    push bx
-    mov ax, 0x1301
-    mov bx, 0x0007
-    int 0x10
-    pop bx
-    pop ax
-    ret
-loader_entry_log:
-	db 'LOADER was running...'
-LOADER_ENTRY_LOG_LEN equ ($ - loader_entry_log)
+CODE32_SEGMENT_LEN equ $ - CODE32_SEGMENT
