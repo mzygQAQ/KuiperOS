@@ -1,4 +1,25 @@
+%include "./asm-defs.asm.h"
+
 org 0x9000
+
+jmp short __loader_start
+
+;======================================================================================
+
+[section .gdt]
+;							    段基址		段界限		段属性
+GDT_ENTRY	    : Descriptor 	0,		   0,		  0		            ;第0个描述符占位不使用
+CODE32_DSCPT    : Descriptor    0,         0,         DA_C + DA_32     ;
+
+GDT_LEN	equ $ - GDT_ENTRY					                            ;全局描述符表的长度
+GDT_PTR:
+                dw GDT_LEN - 1                                          ;GDT的界限,即最后一个Descriptor的地址
+                dd 0                                                    ;
+;======================================================================================
+
+;定义选择子
+Code32Selector  equ (0x001 << 3) + SA_TIG + SA_RPL0
+
 
 __loader_start:
 	mov ax, cs
