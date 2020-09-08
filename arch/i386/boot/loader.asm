@@ -8,8 +8,10 @@ jmp CODE16_SEGMENT
 
 [section .gdt]
 ;							    段基址		段界限							段属性
-GDT_ENTRY		: Descriptor 	0,		   0,								0		            ;第0个描述符占位不使用
+GDT_ENTRY		: 
+NOTUSE_DESC		: Descriptor 	0,		   0,								0		            ;第0个描述符占位不使用
 CODE32_DESC		: Descriptor    0,         CODE32_SEGMENT_LEN - 1,			DA_C + DA_32		;
+VIDEO_DESC		: Descriptor    0xb8000,   0x07fff,							DA_DRWA + DA_32		;	
 
 GDT_LEN	equ $ - GDT_ENTRY					                            ;全局描述符表的长度
 GDT_PTR:
@@ -18,8 +20,9 @@ GDT_PTR:
 ;======================================================================================
 
 ;定义选择子
-Code32Selector  equ (0x001 << 3) + SA_TIG + SA_RPL0
 
+Code32Selector  equ (0x001 << 3) + SA_TIG + SA_RPL0
+VideoSelector	equ (0x002 << 3) + SA_TIG + SA_RPL0
 
 [section .s16]
 [bits 16]
@@ -59,7 +62,7 @@ CODE16_SEGMENT:
 	out 0x92, al
 
 	;设置CR0寄存器 跳转到32位保护模式
-	xor eax,eax
+	xor eax, eax
 	mov eax, cr0
 	or eax, 0x01
 	mov cr0, eax
@@ -71,6 +74,14 @@ CODE16_SEGMENT:
 [bits 32]
 CODE32_SEGMENT:
 	xor eax, eax
+
+	mov ax, VideoSelector
+	mov gs, ax
+	mov edi, (80 * 12 + 37) * 2
+	mov ah, 0x0c
+	mov al, 'K'
+	mov word [gs:edi], ax
+
 	jmp CODE32_SEGMENT
 
 CODE32_SEGMENT_LEN equ $ - CODE32_SEGMENT
