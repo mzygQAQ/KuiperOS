@@ -4,22 +4,22 @@ org 0x9000
 
 jmp CODE16_SEGMENT
 
-;======================================================================================
-
+;===========================================================================================================================================
 [section .gdt]
 ;							    段基址		段界限							段属性
 GDT_ENTRY		: 
 NOTUSE_DESC		: Descriptor 	0,		   0,								0		            ;第0个描述符占位不使用
-CODE32_DESC		: Descriptor    0,         CODE32_SEGMENT_LEN - 1,			DA_C + DA_32		;
+CODE32_DESC		: Descriptor    0,         CODE32_SEGMENT_LEN - 1,			DA_C    + DA_32		;
 VIDEO_DESC		: Descriptor    0xb8000,   0x07fff,							DA_DRWA + DA_32		;	
-DATA32_DESC     : Descriptor    0,         DATA32_SEGMENT_LEN - 1,          DA_DR + DA_32		;只读
-STACK32_DESC    : Descriptor    0,         0x7c00,                          DA_DRW + DA_32		;0-0x7c00
+DATA32_DESC     : Descriptor    0,         DATA32_SEGMENT_LEN - 1,          DA_DR   + DA_32		;只读
+STACK32_DESC    : Descriptor    0,         STACK32_SEGMENT_LEN - 1,         DA_DRW  + DA_32		;可读可写STACK32_DESC    : Descriptor    0,         0x7c00,         DA_DRW  + DA_32		;可读可写
 
-GDT_LEN	equ $ - GDT_ENTRY					                            ;全局描述符表的长度
+GDT_LEN	equ $ - GDT_ENTRY					                                                    ;全局描述符表的长度
 GDT_PTR:
-                dw GDT_LEN - 1                                          ;GDT的界限,即最后一个Descriptor的地址
-                dd 0                                                    ;
-;======================================================================================
+    dw GDT_LEN - 1                                                                  ;GDT的界限,即最后一个Descriptor的地址
+    dd 0                                                                            ;16位代码段运行时需要设置为正确的长度
+																					;直接定义GDT_ENTRY的话nasm会错链接问题
+;==========================================================================================================================================
 
 ;定义选择子
 Code32Selector  equ (0x001 << 3) + SA_TIG + SA_RPL0
@@ -44,6 +44,11 @@ CODE16_SEGMENT:
 	;初始化DATA32_DESC的段基址,.gdt中定义的是0,这里需要设置为正确的值
 	mov esi,DATA32_SEGMENT
 	mov edi,DATA32_DESC
+	call init_descriptor_seg_base
+
+	;初始化STACK32_DESC的段基址,.gdt中定义的是0,这里需要设置为正确的值
+	mov esi, STACK32_SEGMENT
+	mov edi, STACK32_DESC
 	call init_descriptor_seg_base
 
 	;设置GDT_PTR,.gd中定义的是0,这里需要设置成正确的值
@@ -96,6 +101,8 @@ CODE32_SEGMENT:
 
 	mov ax, Stack32Selector
 	mov ss, ax
+	mov eax, STACK32_SEGMENT_LEN - 1
+	mov esp, eax
 
 	mov ax, VideoSelector
 	mov gs, ax
@@ -151,6 +158,20 @@ CODE32_SEGMENT_LEN equ $ - CODE32_SEGMENT
 [bits 32]
 DATA32_SEGMENT:
 	KUIPER_OS	db 'KuiperOS-PM', 0
-	KUIPER_OS_OFFSET equ KUIPER_OS - $$	;和实模式不同这里是段内的便宜
-DATA32_SEGMENT_LEN	equ $ - DATA32_SEGMENT
+    KUIPER_OS_OFFSET     equ KUIPER_OS - $$	;和实模式不同这里是段内的便宜
+
+DATA32_SEGMENT_LEN   equ $ - DATA32_SEGMENT
 ;================================================================================
+
+
+;================================================================================
+;这里定义4kb内存作为保护模式下的栈空间
+[section .gs32]
+[bits 32]
+STACK32_SEGMENT:
+	times 4096 db 0
+STACK32_SEGMENT_LEN	  equ $ - STACK32_SEGMENT
+;================================================================================
+
+
+
