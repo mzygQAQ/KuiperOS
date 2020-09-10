@@ -12,8 +12,8 @@ GDT_ENTRY		:
 NOTUSE_DESC		: Descriptor 	0,		   0,								0		            ;第0个描述符占位不使用
 CODE32_DESC		: Descriptor    0,         CODE32_SEGMENT_LEN - 1,			DA_C + DA_32		;
 VIDEO_DESC		: Descriptor    0xb8000,   0x07fff,							DA_DRWA + DA_32		;	
-DATA32_DESC     : Descriptor    0,		   DATA32_SEGMENT_LEN - 1,			DA_DR + DA_32		;只读
-STACK32_DESC    : Descriptor    0,         0x7c00,						    DA_DRW + DA_32		;0-0x7c00
+DATA32_DESC     : Descriptor    0,         DATA32_SEGMENT_LEN - 1,          DA_DR + DA_32		;只读
+STACK32_DESC    : Descriptor    0,         0x7c00,                          DA_DRW + DA_32		;0-0x7c00
 
 GDT_LEN	equ $ - GDT_ENTRY					                            ;全局描述符表的长度
 GDT_PTR:
