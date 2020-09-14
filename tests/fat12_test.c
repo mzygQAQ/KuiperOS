@@ -68,7 +68,7 @@ int main(int argc, const char **argv)
         fread((void*)&rootEntry, (size_t)1 , sizeof(fat12_root_entry_t), pFile);
         printf("DIR_NAME: %s\n", rootEntry.DIR_Name);
         printf("DIR_WrtDate:%d\n", rootEntry.DIR_WrtDate);
-	printf("DIR_FstClus: %d\n", rootEntry.DIR_FstClus);
+		printf("DIR_FstClus: %d\n", rootEntry.DIR_FstClus);
         printf("DIR_FileSize: %d\n", rootEntry.DIR_FileSize);
         printf("======================\n");
     }

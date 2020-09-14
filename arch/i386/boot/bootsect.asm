@@ -321,7 +321,7 @@ _idx_odd:
 	mov bp, cx
 	mov cl, byte [bp]
 	shr cl, 4
-	add cl, 0x0f
+	and cl, 0x0f
 	mov ch, 0
 	or  dx, cx   
 	jmp _rfi_done
