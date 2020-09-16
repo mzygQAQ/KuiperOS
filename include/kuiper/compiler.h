@@ -27,8 +27,8 @@
 #define __inline__ inline
 #endif
 
-#ifndef __always_inline
-#define __always_inline inline
+#ifndef __always_inline__
+#define __always_inline__ inline
 #endif
 
 #define offsetof(type,member) ((size_t)&(((type*)0)->member))
