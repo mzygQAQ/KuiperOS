@@ -16,7 +16,7 @@ STACK32_DESC    : Descriptor    0,         STACK32_SEGMENT_LEN - 1,         DA_D
 
 GDT_LEN	equ $ - GDT_ENTRY					                                                    ;全局描述符表的长度
 GDT_PTR:
-    dw GDT_LEN - 1                                                                  ;GDT的界限,即最后一个Descriptor的地址
+    dw GDT_LEN - 1                                                                  ;GDT界限
     dd 0                                                                            ;16位代码段运行时需要设置为正确的长度
 																					;直接定义GDT_ENTRY的话nasm会错链接问题
 ;==========================================================================================================================================
