@@ -1,12 +1,16 @@
 ;段属性常量
 DA_32   equ 0x4000
+
 DA_DR   equ 0x90
 DA_DRW  equ 0x92
 DA_DRWA equ 0x93
+
 DA_C    equ 0x98
 DA_CR   equ 0x9a
 DA_CC0  equ 0x9c
 DA_CC0R equ 0x9e
+
+DA_LDT  equ 0x82
 
 ;选择子相关的属性
 SA_RPL0 equ 0
