@@ -1,4 +1,4 @@
-%include "asm-defs.asm.h"
+%include "constants_defs.asm"
 
 org 0x9000
 
@@ -6,14 +6,20 @@ jmp CODE16_SEGMENT
 
 ;===========================================================================================================================================
 [section .gdt]
-;							    段基址		段界限							段属性
-GDT_ENTRY		: 
-NOTUSE_DESC		: Descriptor 	0,		   0,								0		            ;第0个描述符占位不使用
-CODE32_DESC		: Descriptor    0,         CODE32_SEGMENT_LEN - 1,			DA_C    + DA_32		;32位代码段描述符表
-VIDEO_DESC		: Descriptor    0xb8000,   0x07fff,							DA_DRWA + DA_32		;Vga-Text模式显卡内存段描述符表
-DATA32_DESC     : Descriptor    0,         DATA32_SEGMENT_LEN - 1,          DA_DR   + DA_32		;只读数据段描述符号
-STACK32_DESC    : Descriptor    0,         STACK32_SEGMENT_LEN - 1,         DA_DRW  + DA_32		;可读可写
-TASK1_LDT_DESC  : Descriptor    0,         TASK1_LDT_LEN - 1,               DA_LDT  + DA_32     ;对应的表又是一张局部描述符表
+;							      段基址		段界限							段属性
+GDT_ENTRY		  : 
+NOTUSE_DESC		  : Descriptor 	  0,		 0,								    0		            ;第0个描述符占位不使用
+CODE32_DESC		  : Descriptor    0,         CODE32_SEGMENT_LEN - 1,			DA_C    + DA_32		;32位代码段描述符表
+VIDEO_DESC		  : Descriptor    0xb8000,   0x07fff,							DA_DRWA + DA_32		;Vga-Text模式显卡内存段描述符表
+DATA32_DESC       : Descriptor    0,         DATA32_SEGMENT_LEN - 1,            DA_DR   + DA_32		;只读数据段描述符号
+STACK32_DESC      : Descriptor    0,         STACK32_SEGMENT_LEN - 1,           DA_DRW  + DA_32		;可读可写
+FUNCTION_DESC     : Descriptor    0,         FUNCTION_SEGMENT_LEN - 1,          DA_C    + DA_32     ;可执行
+
+;调用门描述符定义                选择子              偏移地址         参数数     属性
+FUNC_CG_ADD_DESC  : Gate         FunctionSelector,   CG_ADD_OFFSET,   0,         DA_I386C_GATE         
+FUNC_CG_SUB_DESC  : Gate         FunctionSelector,   CG_SUB_OFFSET,   0,         DA_I386C_GATE
+
+
 GDT_LEN	 equ $ - GDT_ENTRY					                                                    ;全局描述符表的长度
 GDT_PTR:
     dw GDT_LEN - 1                                                                  ;GDT界限
@@ -26,7 +32,9 @@ Code32Selector    equ (0x001 << 3) + SA_TIG + SA_RPL0
 VideoSelector	  equ (0x002 << 3) + SA_TIG + SA_RPL0
 Data32Selector	  equ (0x003 << 3) + SA_TIG + SA_RPL0
 Stack32Selector   equ (0x004 << 3) + SA_TIG + SA_RPL0
-Task1LdtSelector  equ (0x005 << 3) + SA_TIG + SA_RPL0
+FunctionSelector  equ (0x005 << 3) + SA_TIG + SA_RPL0
+FuncCgAddSelector equ (0x006 << 3) + SA_TIG + SA_RPL0
+FuncCgSubSelector equ (0x007 << 3) + SA_TIG + SA_RPL0
 
 [section .s16]
 [bits 16]
@@ -52,19 +60,11 @@ CODE16_SEGMENT:
 	mov edi, STACK32_DESC
 	call init_descriptor_seg_base
 
-	;task1相关
-	mov esi, TASK1_LDT_SEGMENT
-	mov edi, TASK1_LDT_DESC
+	;初始化函数段
+	mov esi, FUNCTION_SEGMENT
+	mov edi, FUNCTION_DESC
 	call init_descriptor_seg_base
-	mov esi, TASK1_CODE_SEGMENT
-	mov edi, TASK1_CODE_DESC
-	call init_descriptor_seg_base
-	mov esi, TASK1_DATA_SEGMENT
-	mov edi, TASK1_DATA_DESC
-	call init_descriptor_seg_base
-	mov esi, TASK1_STACK_SEGMENT
-	mov edi, TASK1_STACK_DESC
-	call init_descriptor_seg_base
+
 
 	;设置GDT_PTR,.gd中定义的是0,这里需要设置成正确的值
 	xor eax, eax
@@ -96,7 +96,6 @@ CODE16_SEGMENT:
 ;@param edi descriptor label
 init_descriptor_seg_base:
 	push eax
-
 	xor eax, eax
 	mov ax, cs
 	shl eax, 4
@@ -105,10 +104,8 @@ init_descriptor_seg_base:
 	shr eax, 16
 	mov byte [edi + 4], al
 	mov byte [edi + 7], ah
-
 	pop eax
 	ret
-
 
 [section .s32]
 [bits 32]
@@ -130,13 +127,11 @@ CODE32_SEGMENT:
 	mov dx, 0x0100
 	call write_string32
 
-	mov ax, Task1LdtSelector
-	lldt ax
+	mov ax, 3
+	mov bx, 1
+	call FuncCgAddSelector : 0
 
-	; 执行task1
-	jmp dword Task1CodeSelector : 0
-
-	jmp CODE32_SEGMENT
+	jmp $
 
 ;保护模式的打印字符串，前提是gs已经放入了显存的选择子.
 ;@param ds:ebp straddr
@@ -192,91 +187,27 @@ STACK32_SEGMENT:
 STACK32_SEGMENT_LEN	  equ $ - STACK32_SEGMENT
 ;================================================================================
 
-
 ;================================================================================
-[section .task1_ldt]
+[section .func]
 [bits 32]
-TASK1_LDT_SEGMENT:
-TASK1_LDT_ENTRY:
-TASK1_CODE_DESC:    Descriptor          0,           TASK1_CODE_SEGMENT_LEN - 1,     DA_C   + DA_32
-TASK1_DATA_DESC:    Descriptor          0,           TASK1_DATA_SEGMENT_LEN - 1,     DA_DR  + DA_32
-TASK1_STACK_DESC:   Descriptor          0,           TASk1_STACK_BASE_ADDR,          DA_DRW + DA_32
+FUNCTION_SEGMENT:
 
-TASK1_LDT_LEN        equ $ - TASK1_LDT_ENTRY
+;ax: a
+;bx: b
+;cx: a+b
+AddFunc:
+	mov cx, ax
+	add cx, bx
+	retf ;return far
+CG_ADD_OFFSET    equ  AddFunc - $$
 
-Task1CodeSelector    equ (0x0000 << 3) + SA_TIL + SA_RPL0
-Task1DataSelector    equ (0x0001 << 3) + SA_TIL + SA_RPL0
-Task1StackSelector   equ (0x0002 << 3) + SA_TIL + SA_RPL0
-;================================================================================
-[section .task1_data]
-[bits 32]
-TASK1_DATA_SEGMENT:
-	TASK1_ECHO_STR	db "task1 was running on the cpu",0
-	TASK1_ECHO_STR_OFFSET equ TASK1_ECHO_STR - $$
+;ax: a
+;bx: b
+;cx: a-b
+SubFunc:
+	mov cx, ax
+	sub cx, bx
+	retf
+CG_SUB_OFFSET   equ  SubFunc - $$
 
-	TASK1_DATA_SEGMENT_LEN equ $ - TASK1_DATA_SEGMENT
-
-[section .task1_code]
-[bits 32]
-TASK1_CODE_SEGMENT:
-	mov ax, VideoSelector
-	mov gs, ax
-
-	mov ax, Task1DataSelector
-	mov ds, ax
-
-	mov ax, Task1StackSelector
-	mov ss, ax
-	mov eax, TASk1_STACK_BASE_ADDR
-	mov esp, eax
-
-	mov ebp, TASK1_ECHO_STR_OFFSET
-	mov bx, 0x0c
-	mov dx, 0x0200
-	call task1_write_string32
-
-task1_spin:
-	jmp task1_spin
-
-
-;保护模式的打印字符串，前提是gs已经放入了显存的选择子.
-;@param ds:ebp straddr
-;@param bx     print attr
-;@param dx	   dh:row dl:col
-task1_write_string32:
-	push eax
-	push ecx
-	push edx
-	push edi
-	push ebp
-task1_wrt32_print:
-	mov cl, [ds:ebp]
-	cmp cl, 0
-	jz task1_wrt32_done
-	mov eax, 80
-	mul dh
-	add al, dl
-	shl eax, 1	; x 2
-	mov edi, eax
-	mov ah, bl	; attr
-	mov al, cl	; char to print
-	mov word [gs:edi], ax
-	inc ebp
-	inc dl; 这里考虑换行
-	jmp task1_wrt32_print
-task1_wrt32_done:
-	pop ebp
-	pop edi
-	pop edx
-	pop ecx
-	pop eax
-	ret
-
-	TASK1_CODE_SEGMENT_LEN equ $ - TASK1_CODE_SEGMENT
-
-[section .task1_stack]
-[bits 32]
-TASK1_STACK_SEGMENT:
-	times 512 db 0
-	TASK1_STACK_SEGMENT_LEN equ $ - TASK1_STACK_SEGMENT
-	TASk1_STACK_BASE_ADDR	equ TASK1_STACK_SEGMENT_LEN - 1
+FUNCTION_SEGMENT_LEN  equ $ - FUNCTION_SEGMENT
