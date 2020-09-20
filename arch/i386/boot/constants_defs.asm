@@ -9,10 +9,6 @@ DA_CR   equ 0x9a
 DA_CC0  equ 0x9c
 DA_CC0R equ 0x9e
 
-;描述符标的类型: 全局描述符表 + 局部描述符表
-SA_TIG equ 0
-SA_TIL equ 4
-
 ;标识段类型的属性
 DA_LDT           equ 0x82 ;代表该段是一个局部描述符表
 DA_TASK_GATE     equ 0x85 ;代表任务门
@@ -26,6 +22,10 @@ DA_DPL0 equ 0x00
 DA_DPL1 equ 0x20
 DA_DPL2 equ 0x40
 DA_DPL3 equ 0x60
+
+;描述符标的类型: 全局描述符表 + 局部描述符表
+SA_TIG equ 0
+SA_TIL equ 4
 
 ;请求的特权级别，用于选择子
 SA_RPL0 equ 0
@@ -51,3 +51,11 @@ SA_RPL3 equ 3
 	dw (%3 & 0x1f) | ((%4 << 8) & 0xff00)   ;属性
 	dw ((%2 >> 16) & 0xffff)                ;偏移地址2
 %endmacro
+
+
+
+
+
+
+; NOTES:
+; CallGate只支持从低特权级跳转到高特权级别，无法从高特权级别到低特权级别

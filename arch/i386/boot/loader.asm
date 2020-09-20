@@ -9,15 +9,18 @@ jmp CODE16_SEGMENT
 ;							      段基址		段界限							段属性
 GDT_ENTRY		  : 
 NOTUSE_DESC		  : Descriptor 	  0,		 0,								    0		            ;第0个描述符占位不使用
-CODE32_DESC		  : Descriptor    0,         CODE32_SEGMENT_LEN - 1,			DA_C    + DA_32		;32位代码段描述符表
-VIDEO_DESC		  : Descriptor    0xb8000,   0x07fff,							DA_DRWA + DA_32		;Vga-Text模式显卡内存段描述符表
-DATA32_DESC       : Descriptor    0,         DATA32_SEGMENT_LEN - 1,            DA_DR   + DA_32		;只读数据段描述符号
-STACK32_DESC      : Descriptor    0,         STACK32_SEGMENT_LEN - 1,           DA_DRW  + DA_32		;可读可写
-FUNCTION_DESC     : Descriptor    0,         FUNCTION_SEGMENT_LEN - 1,          DA_C    + DA_32     ;可执行
+CODE32_DESC		  : Descriptor    0,         CODE32_SEGMENT_LEN - 1,			DA_C    + DA_32 + DA_DPL0		;32位代码段描述符表
+VIDEO_DESC		  : Descriptor    0xb8000,   0x07fff,							DA_DRWA + DA_32 + DA_DPL0		;Vga-Text模式显卡内存段描述符表
+DATA32_DESC       : Descriptor    0,         DATA32_SEGMENT_LEN - 1,            DA_DR   + DA_32	+ DA_DPL0	;只读数据段描述符号
+STACK32_DESC      : Descriptor    0,         STACK32_SEGMENT_LEN - 1,           DA_DRW  + DA_32	+ DA_DPL0	;可读可写
+FUNCTION_DESC     : Descriptor    0,         FUNCTION_SEGMENT_LEN - 1,          DA_C    + DA_32 + DA_DPL0   ;可执行
+TASK1_LDT_DESC    : Descriptor    0,         TASK1_LDG_SEGMENT_LEN -1,          DA_LDT  + DA_DPL0           ;局部描述服
+TSS_DESC          : Descriptor    0,         TSS_SEGMENT_LEN - 1,               DA_I386_TSS + DA_DPL0       ;TSS     
 
 ;调用门描述符定义                选择子              偏移地址         参数数     属性
-FUNC_CG_ADD_DESC  : Gate         FunctionSelector,   CG_ADD_OFFSET,   0,         DA_I386C_GATE         
-FUNC_CG_SUB_DESC  : Gate         FunctionSelector,   CG_SUB_OFFSET,   0,         DA_I386C_GATE
+FUNC_CG_ADD_DESC  : Gate         FunctionSelector,   CG_ADD_OFFSET,   0,         DA_I386C_GATE + DA_DPL3         
+FUNC_CG_SUB_DESC  : Gate         FunctionSelector,   CG_SUB_OFFSET,   0,         DA_I386C_GATE + DA_DPL3
+FUNC_CG_WRT32_DESC: Gate         FunctionSelector,   write_string32_offset,0,    DA_I386C_GATE + DA_DPL3
 
 
 GDT_LEN	 equ $ - GDT_ENTRY					                                                    ;全局描述符表的长度
@@ -28,13 +31,16 @@ GDT_PTR:
 ;==========================================================================================================================================
 
 ;定义选择子
-Code32Selector    equ (0x001 << 3) + SA_TIG + SA_RPL0
-VideoSelector	  equ (0x002 << 3) + SA_TIG + SA_RPL0
-Data32Selector	  equ (0x003 << 3) + SA_TIG + SA_RPL0
-Stack32Selector   equ (0x004 << 3) + SA_TIG + SA_RPL0
-FunctionSelector  equ (0x005 << 3) + SA_TIG + SA_RPL0
-FuncCgAddSelector equ (0x006 << 3) + SA_TIG + SA_RPL0
-FuncCgSubSelector equ (0x007 << 3) + SA_TIG + SA_RPL0
+Code32Selector        equ (0x001 << 3) + SA_TIG + SA_RPL0
+VideoSelector	      equ (0x002 << 3) + SA_TIG + SA_RPL0
+Data32Selector	      equ (0x003 << 3) + SA_TIG + SA_RPL0
+Stack32Selector       equ (0x004 << 3) + SA_TIG + SA_RPL0
+FunctionSelector      equ (0x005 << 3) + SA_TIG + SA_RPL0
+Task1LdtSelector      equ (0x006 << 3) + SA_TIG + SA_RPL0
+TssSelector           equ (0x007 << 3) + SA_TIG + SA_RPL0
+FuncCgAddSelector     equ (0x007 << 3) + SA_TIG + SA_RPL3
+FuncCgSubSelector     equ (0x008 << 3) + SA_TIG + SA_RPL3
+FuncCgWrt32Selector   equ (0x009 << 3) + SA_TIG + SA_RPL3
 
 [section .s16]
 [bits 16]
@@ -63,6 +69,27 @@ CODE16_SEGMENT:
 	;初始化函数段
 	mov esi, FUNCTION_SEGMENT
 	mov edi, FUNCTION_DESC
+	call init_descriptor_seg_base
+
+	;初始化tss
+	mov esi, TSS_SEGMENT
+	mov edi, TSS_DESC
+	call init_descriptor_seg_base
+
+	;初始化task1的ldt描述符号
+	mov esi, TASK1_LDT_SEGMENT;
+	mov edi, TASK1_LDT_DESC
+	call init_descriptor_seg_base
+
+	;初始化task1的代码数据和堆栈
+	mov esi, TASK1_CODE_SEGMENT;
+	mov edi, TASK1_CODE_DESC
+	call init_descriptor_seg_base
+	mov esi, TASK1_DATA_SEGMENT;
+	mov edi, TASK1_DATA_DESC
+	call init_descriptor_seg_base
+	mov esi, TASK1_STACK_SEGMENT
+	mov edi, TASK1_STACK_DESC
 	call init_descriptor_seg_base
 
 
@@ -107,6 +134,22 @@ init_descriptor_seg_base:
 	pop eax
 	ret
 
+[section .tss]
+[bits 32]
+TSS_SEGMENT:
+	dd 0
+	dd TopOfStack32		;ring0 esp
+	dd Stack32Selector  ;ring0 ss
+	dd 0                ;ring1 esp
+	dd 0                ;ring1 ss
+	dd 0                ;ring2 esp
+	dd 0                ;ring2 ss
+	times 4 * 18 dd 0
+	dw 0
+	dw $ - TSS_SEGMENT + 2
+	db 0xff
+TSS_SEGMENT_LEN equ $ - TSS_SEGMENT
+
 [section .s32]
 [bits 32]
 CODE32_SEGMENT:
@@ -125,13 +168,50 @@ CODE32_SEGMENT:
 	mov ebp, KUIPER_OS_OFFSET
 	mov bx, 0x0c
 	mov dx, 0x0100
-	call write_string32
+	;call FuncCgWrt32Selector : 0
+	call FunctionSelector : write_string32_offset
 
-	mov ax, 3
-	mov bx, 1
-	call FuncCgAddSelector : 0
+	;mov ax, 3
+	;mov bx, 1
+	; call FuncCgAddSelector : 0              ;利用调用门去调用函数
+	;call FunctionSelector : CG_ADD_OFFSET     ;利用选择子+偏移地址调用函数
+
+	;切换到task1执行, task1运行在用户态
+	mov ax, Task1LdtSelector
+	lldt ax
+	;jmp Task1CodeSelector : 0 error: 特权级高的代码也不能直接跳转到低的代码段
+	; 必须是使用retf,前提是先把目标段的堆栈信息和代码地址压入当前内核的堆栈中
+	push Task1StackSelector
+	push TASK1_STACK_SEGMENT_LEN - 1
+	push Task1CodeSelector
+	push 0
+	retf
 
 	jmp $
+CODE32_SEGMENT_LEN equ $ - CODE32_SEGMENT
+;================================================================================
+[section .dat]
+[bits 32]
+DATA32_SEGMENT:
+	KUIPER_OS	db 'KuiperOS entered x86_32 protect model', 0
+    KUIPER_OS_OFFSET     equ KUIPER_OS - $$	;和实模式不同，这里是起始地址在段内的偏移量
+
+DATA32_SEGMENT_LEN   equ $ - DATA32_SEGMENT
+;================================================================================
+
+;================================================================================
+;这里定义4kb内存作为保护模式下的栈空间
+[section .gs32]
+[bits 32]
+STACK32_SEGMENT:
+	times 4096 db 0
+STACK32_SEGMENT_LEN	  equ $ - STACK32_SEGMENT
+;================================================================================
+
+;================================================================================
+[section .func]
+[bits 32]
+FUNCTION_SEGMENT:
 
 ;保护模式的打印字符串，前提是gs已经放入了显存的选择子.
 ;@param ds:ebp straddr
@@ -164,33 +244,9 @@ wrt32_done:
 	pop edx
 	pop ecx
 	pop eax
-	ret
+	retf
+write_string32_offset  equ write_string32 - $$
 
-CODE32_SEGMENT_LEN equ $ - CODE32_SEGMENT
-
-;================================================================================
-[section .dat]
-[bits 32]
-DATA32_SEGMENT:
-	KUIPER_OS	db 'KuiperOS-PM', 0
-    KUIPER_OS_OFFSET     equ KUIPER_OS - $$	;和实模式不同，这里是起始地址在段内的偏移量
-
-DATA32_SEGMENT_LEN   equ $ - DATA32_SEGMENT
-;================================================================================
-
-;================================================================================
-;这里定义4kb内存作为保护模式下的栈空间
-[section .gs32]
-[bits 32]
-STACK32_SEGMENT:
-	times 4096 db 0
-STACK32_SEGMENT_LEN	  equ $ - STACK32_SEGMENT
-;================================================================================
-
-;================================================================================
-[section .func]
-[bits 32]
-FUNCTION_SEGMENT:
 
 ;ax: a
 ;bx: b
@@ -211,3 +267,51 @@ SubFunc:
 CG_SUB_OFFSET   equ  SubFunc - $$
 
 FUNCTION_SEGMENT_LEN  equ $ - FUNCTION_SEGMENT
+
+
+;======================= Task1 start ===============================
+[section .task1_ldt]
+[bits 32]
+TASK1_LDT_SEGMENT:
+TASK1_CODE_DESC:    Descriptor 0, TASK1_CODE_SEGMENT_LEN-1,  DA_C   + DA_32 + DA_DPL3
+TASK1_DATA_DESC:    Descriptor 0, TASK1_DATA_SEGMENT_LEN-1,  DA_DR  + DA_32 + DA_DPL3
+TASK1_STACK_DESC:   Descriptor 0, TASK1_STACK_SEGMENT_LEN-1, DA_DRW + DA_32 + DA_DPL3
+TASK1_LDG_SEGMENT_LEN  equ $ - TASK1_LDT_SEGMENT
+
+; task1 ldt sectors
+Task1CodeSelector  equ (0x000 << 3) + SA_TIL + SA_RPL3
+Task1DataSelector  equ (0x001 << 3) + SA_TIL + SA_RPL3
+Task1StackSelector equ (0x002 << 3) + SA_TIL + SA_RPL3
+
+[section .task1_code]
+[bits 32]
+TASK1_CODE_SEGMENT:
+	xor eax, eax
+	xor ebx, ebx
+	;模拟系统调用 ring3->ring0
+	mov ebp, taskNameOffset
+	mov bx, 0x0c
+	mov dx, 0x0200
+	call FuncCgWrt32Selector : 0
+	; call FunctionSelector : write_string32_offset error: dpl=0, cpl=3
+
+	jmp $
+TASK1_CODE_SEGMENT_LEN equ $ - TASK1_CODE_SEGMENT
+
+[section .task1_data]
+[bits 32]
+TASK1_DATA_SEGMENT:
+
+taskName: db 'kernel-daemon-task'
+taskNameOffset equ taskName - $$
+
+TASK1_DATA_SEGMENT_LEN equ $ - TASK1_DATA_SEGMENT
+
+[section .task1_stack]
+[bits 32]
+TASK1_STACK_SEGMENT:
+	times 512 db 0
+TASK1_STACK_SEGMENT_LEN equ $ - TASK1_STACK_SEGMENT
+
+
+;======================= Task1 end ===============================
