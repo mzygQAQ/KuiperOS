@@ -1,7 +1,6 @@
 .PHONY: all clean rebuild run
 
 RM := rm -rf
-
 CC=gcc
 CFLAGS=-g
 BIN=kbin
@@ -17,6 +16,18 @@ LOADER_OUT := ./build/loader.bin
 
 IMG := ./build/data.img
 IMG_MNT_PATH := /home/mzygmzyg1996/mnt
+
+
+ifeq ($(OS),Windows_NT)
+ PLATFORM="Windows"
+else
+ ifeq ($(shell uname),Darwin)
+  PLATFORM="MacOS"
+ else
+  PLATFORM="Linux"
+ endif
+endif
+
 
 all : $(BOOT_OUT) $(LOADER_OUT) $(IMG)
 	@echo "build success..."

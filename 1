@@ -297,9 +297,7 @@ TASK1_CODE_SEGMENT:
 	mov dx, 0x0200
 	call FuncCgWrt32Selector : 0
 	; call FunctionSelector : write_string32_offset error: dpl=0, cpl=3
-    
-    ;TODO 从用户态程序返回内核态
-    nop
+
 	jmp $
 TASK1_CODE_SEGMENT_LEN equ $ - TASK1_CODE_SEGMENT
 
