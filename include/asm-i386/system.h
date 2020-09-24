@@ -6,7 +6,8 @@
  * certaion extent, and the copyright belongs to the original author.
  */
 
-#define nop() __asm__ __volatile__ ("nop")
+#define nop()    __asm__ __volatile__("nop")
+#define pause()  __asm__ __volatile__("pause")
 
 /* 单CPU只需要考虑编译优化导致的内存屏障, 多CPU或者多核心CPU还需要考虑CPU级别的指令乱序 */
 
