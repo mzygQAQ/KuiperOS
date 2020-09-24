@@ -14,13 +14,13 @@ VIDEO_DESC		  : Descriptor    0xb8000,   0x07fff,							DA_DRWA + DA_32 + DA_DPL
 DATA32_DESC       : Descriptor    0,         DATA32_SEGMENT_LEN - 1,            DA_DR   + DA_32	+ DA_DPL0	;只读数据段描述符号
 STACK32_DESC      : Descriptor    0,         STACK32_SEGMENT_LEN - 1,           DA_DRW  + DA_32	+ DA_DPL0	;可读可写
 FUNCTION_DESC     : Descriptor    0,         FUNCTION_SEGMENT_LEN - 1,          DA_C    + DA_32 + DA_DPL0   ;可执行
-TASK1_LDT_DESC    : Descriptor    0,         TASK1_LDG_SEGMENT_LEN -1,          DA_LDT  + DA_DPL0           ;局部描述服
+TASK1_LDT_DESC    : Descriptor    0,         TASK1_LDT_SEGMENT_LEN -1,          DA_LDT  + DA_DPL0           ;局部描述服
 TSS_DESC          : Descriptor    0,         TSS_SEGMENT_LEN - 1,               DA_I386_TSS + DA_DPL0       ;TSS     
 
 ;调用门描述符定义                选择子              偏移地址         参数数     属性
-FUNC_CG_ADD_DESC  : Gate         FunctionSelector,   CG_ADD_OFFSET,   0,         DA_I386C_GATE + DA_DPL3         
-FUNC_CG_SUB_DESC  : Gate         FunctionSelector,   CG_SUB_OFFSET,   0,         DA_I386C_GATE + DA_DPL3
-FUNC_CG_WRT32_DESC: Gate         FunctionSelector,   write_string32_offset,0,    DA_I386C_GATE + DA_DPL3
+FUNC_CG_ADD_DESC  : Gate      FunctionSelector,   CG_ADD_OFFSET,   0,         DA_I386C_GATE + DA_DPL3         
+FUNC_CG_SUB_DESC  : Gate      FunctionSelector,   CG_SUB_OFFSET,   0,         DA_I386C_GATE + DA_DPL3
+FUNC_CG_WRT32_DESC: Gate      FunctionSelector,   write_string32_offset,0,    DA_I386C_GATE + DA_DPL3
 
 
 GDT_LEN	 equ $ - GDT_ENTRY                                                          ;全局描述符表的长度
@@ -277,7 +277,7 @@ TASK1_LDT_SEGMENT:
 TASK1_CODE_DESC:    Descriptor 0, TASK1_CODE_SEGMENT_LEN-1,  DA_C   + DA_32 + DA_DPL3
 TASK1_DATA_DESC:    Descriptor 0, TASK1_DATA_SEGMENT_LEN-1,  DA_DR  + DA_32 + DA_DPL3
 TASK1_STACK_DESC:   Descriptor 0, TASK1_STACK_SEGMENT_LEN-1, DA_DRW + DA_32 + DA_DPL3
-TASK1_LDG_SEGMENT_LEN  equ $ - TASK1_LDT_SEGMENT
+TASK1_LDT_SEGMENT_LEN  equ $ - TASK1_LDT_SEGMENT
 
 ; task1 ldt sectors
 Task1CodeSelector  equ (0x000 << 3) + SA_TIL + SA_RPL3
@@ -289,14 +289,14 @@ Task1StackSelector equ (0x002 << 3) + SA_TIL + SA_RPL3
 TASK1_CODE_SEGMENT:
 	xor eax, eax
 	xor ebx, ebx
-	;模拟系统调用 ring3->ring0
+	;模拟系统调用 ring3->ring0 需要切换到通过tss找到内核的栈
     mov ax, Task1DataSelector
     mov ds, ax
 	mov ebp, taskNameOffset
 	mov bx, 0x0c
 	mov dx, 0x0200
 	call FuncCgWrt32Selector : 0
-	; call FunctionSelector : write_string32_offset error: dpl=0, cpl=3
+	;call FunctionSelector : write_string32_offset  ;error: dpl=0, cpl=3
     
     ;TODO 从用户态程序返回内核态
     nop

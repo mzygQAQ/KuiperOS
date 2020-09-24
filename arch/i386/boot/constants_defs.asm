@@ -24,14 +24,14 @@ DA_DPL2 equ 0x40
 DA_DPL3 equ 0x60
 
 ;描述符标的类型: 全局描述符表 + 局部描述符表
-SA_TIG equ 0
-SA_TIL equ 4
+SA_TIG equ 0   ;0[0]00
+SA_TIL equ 4   ;0[1]00
 
 ;请求的特权级别，用于选择子
-SA_RPL0 equ 0
-SA_RPL1 equ 1
-SA_RPL2 equ 2
-SA_RPL3 equ 3
+SA_RPL0 equ 0  ;00[00]
+SA_RPL1 equ 1  ;00[01]
+SA_RPL2 equ 2  ;00[10]
+SA_RPL3 equ 3  ;00[11]
 
 ;
 
