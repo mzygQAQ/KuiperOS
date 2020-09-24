@@ -168,8 +168,8 @@ CODE32_SEGMENT:
 	mov ebp, KUIPER_OS_OFFSET
 	mov bx, 0x0c
 	mov dx, 0x0100
-	;call FuncCgWrt32Selector : 0
-	call FunctionSelector : write_string32_offset
+	call FuncCgWrt32Selector : 0
+	;call FunctionSelector : write_string32_offset
 
 	;mov ax, 3
 	;mov bx, 1
