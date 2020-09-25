@@ -1,14 +1,17 @@
 #ifndef __KUIPER_TASK_H_INCLUDED__
 #define __KUIPER_TASK_H_INCLUDED__
 
-#include <kuiper/kernel.h>
+
 #include <kuiper/types.h>
 #include <kuiper/list.h>
+#include <kuiper/compiler.h>
 #include <kuiper/spinlock.h>
 
-#include <asm-i386/thread_info.h>
+#include <asm/current.h>
+#include <asm/thread_info.h>
 
-#define THREAD_SIZE 4096    /* 用户态进程的内核栈的大小 必须一个页大小的整数倍  */
+
+
 
 struct tss_struct
 {
@@ -31,8 +34,6 @@ struct tss_struct
  * |                     |  
  * |                     |
  * |                     |  
- * |                     |
- * |                     |
  * |_____________________|
  * |   thread_info       |
  * |_____________________|  low-address
@@ -47,6 +48,7 @@ union thread_union
     unsigned long stack[THREAD_SIZE / sizeof(long)];  /* 每个用户态进程使用的内核栈 */
 };
 
+
 /* task state definations: */
 #define TASK_STATE_RUNNING           0
 #define TASK_STATE_INTERRUPTIBLE     1
@@ -57,7 +59,7 @@ union thread_union
 
 struct task_struct {
     pid_t pid;
-    volatile int state;   /* TASK_STATE_XXX */
+    volatile int state;             /* TASK_STATE_XXX */
     struct list_head run_list;
     spinlock_t alloc_lock;
 };
