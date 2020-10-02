@@ -11,8 +11,6 @@
 #include <asm/thread_info.h>
 
 
-
-
 struct tss_struct
 {
     /* fix me */

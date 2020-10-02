@@ -10,7 +10,7 @@ jmp CODE16_SEGMENT
 GDT_ENTRY		  : 
 NOTUSE_DESC		  : Descriptor 	  0,		 0,								    0		            ;第0个描述符占位不使用
 CODE32_DESC		  : Descriptor    0,         CODE32_SEGMENT_LEN - 1,			DA_C    + DA_32 + DA_DPL0		;32位代码段描述符表
-VIDEO_DESC		  : Descriptor    0xb8000,   0x07fff,							DA_DRWA + DA_32 + DA_DPL0		;Vga-Text模式显卡内存段描述符表
+VIDEO_DESC		  : Descriptor    0xb8000,   0x07fff,							DA_DRWA + DA_32 + DA_DPL3		;Vga-Text模式显卡内存段描述符表
 DATA32_DESC       : Descriptor    0,         DATA32_SEGMENT_LEN - 1,            DA_DR   + DA_32	+ DA_DPL0	;只读数据段描述符号
 STACK32_DESC      : Descriptor    0,         STACK32_SEGMENT_LEN - 1,           DA_DRW  + DA_32	+ DA_DPL0	;可读可写
 FUNCTION_DESC     : Descriptor    0,         FUNCTION_SEGMENT_LEN - 1,          DA_C    + DA_32 + DA_DPL0   ;可执行
@@ -32,7 +32,7 @@ GDT_PTR:
 
 ;定义选择子
 Code32Selector        equ (0x001 << 3) + SA_TIG + SA_RPL0
-VideoSelector	      equ (0x002 << 3) + SA_TIG + SA_RPL0
+VideoSelector	      equ (0x002 << 3) + SA_TIG + SA_RPL3
 Data32Selector	      equ (0x003 << 3) + SA_TIG + SA_RPL0
 Stack32Selector       equ (0x004 << 3) + SA_TIG + SA_RPL0
 FunctionSelector      equ (0x005 << 3) + SA_TIG + SA_RPL0

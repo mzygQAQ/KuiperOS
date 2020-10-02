@@ -29,6 +29,14 @@ typedef signed short         i16_t;
 typedef signed int           i32_t;
 typedef signed long long     i64_t;
 
+#ifndef __bool_true_false_are_defined
+#define __bool_true_false_are_defined
+// typedef int bool;
+typedef int BOOL;
+#define TRUE  1
+#define FALSE 0
+#endif
+
 
 #ifdef __cplusplus
 #if __cplusplus
