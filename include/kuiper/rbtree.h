@@ -4,7 +4,7 @@
 #include <kuiper/kernel.h>
 
 /**
- * 红黑树的实现. 未完成...
+ * 内核使用的红黑树的实现. TODO
  *
  */
 
@@ -15,7 +15,7 @@ struct rb_node {
     unsigned long rb_parent_color;
     struct rb_node *rb_left;
     struct rb_node *rb_right;
-} __attribute__((aligned(sizeof(long))));       /* 8字节对齐 */
+} __attribute__((aligned(sizeof(long))));       /* 字节对齐 */
 
 struct rb_root {
     struct rb_node *rb_node;

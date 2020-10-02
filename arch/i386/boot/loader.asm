@@ -176,6 +176,10 @@ CODE32_SEGMENT:
 	; call FuncCgAddSelector : 0              ;利用调用门去调用函数
 	;call FunctionSelector : CG_ADD_OFFSET     ;利用选择子+偏移地址调用函数
 
+	;加载tss
+	mov ax, TssSelector
+	ltr ax
+
 	;切换到task1执行, task1运行在用户态
 	mov ax, Task1LdtSelector
 	lldt ax
