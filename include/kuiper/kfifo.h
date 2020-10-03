@@ -2,9 +2,9 @@
 // Created by mzygmzyg1996 on 2020/8/23.
 //
 
-#ifndef _KUIPER_KFIFO_H_INCLUDED_
-#define _KUIPER_KFIFO_H_INCLUDED_
+#ifndef __KUIPER_KFIFO_H_INCLUDED__
+#define __KUIPER_KFIFO_H_INCLUDED__
 
 
 
-#endif //_KUIPER_KFIFO_H_INCLUDED_
+#endif //__KUIPER_KFIFO_H_INCLUDED__

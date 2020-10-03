@@ -1,7 +1,7 @@
-#ifndef _KUIPER_KERNEL_H_INCLUDED_
-#define _KUIPER_KERNEL_H_INCLUDED_
+#ifndef __KUIPER_KERNEL_H_INCLUDED__
+#define __KUIPER_KERNEL_H_INCLUDED__
 
 #include <kuiper/types.h>
 #include <kuiper/compiler.h>
 
-#endif
+#endif /* end of __KUIPER_KERNEL_H_INCLUDED__ */

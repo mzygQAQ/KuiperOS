@@ -1,5 +1,5 @@
-#ifndef _KUIPER_LIST_H_INCLUDED
-#define _KUIPER_LIST_H_INCLUDED
+#ifndef __KUIPER_LIST_H_INCLUDED__
+#define __KUIPER_LIST_H_INCLUDED__
 
 #include <kuiper/kernel.h>
 

@@ -1,5 +1,5 @@
-#ifndef _KUIPER_TYPES_H_INCLUDED_
-#define _KUIPER_TYPES_H_INCLUDED_
+#ifndef __KUIPER_TYPES_H_INCLUDED__
+#define __KUIPER_TYPES_H_INCLUDED__
 
 #ifdef __cplusplus
 #if __cplusplus
@@ -44,4 +44,4 @@ typedef int BOOL;
 #endif /* __cplusplus */
 #endif /* __cplusplus */
 
-#endif /* _KUIPER_TYPES_H_INCLUDED_ */
+#endif /* __KUIPER_TYPES_H_INCLUDED__ */

@@ -1,5 +1,5 @@
-#ifndef _KUIPER_BSTREE_H_INCLUDED_
-#define _KUIPER_BSTREE_H_INCLUDED_
+#ifndef __KUIPER_BSTREE_H_INCLUDED__
+#define __KUIPER_BSTREE_H_INCLUDED__
 
 #include <kuiper/kernel.h>
 
@@ -68,4 +68,4 @@ static __inline__ void bst_add(bstree_t *s, struct bstree_node *new_ele)
 
 
 
-#endif //_KUIPER_BSTREE_H_INCLUDED_
+#endif //__KUIPER_BSTREE_H_INCLUDED__

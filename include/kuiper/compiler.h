@@ -1,5 +1,5 @@
-#ifndef _KUIPER_COMPILER_H_INCLUDED_
-#define _KUIPER_COMPILER_H_INCLUDED_
+#ifndef __KUIPER_COMPILER_H_INCLUDED__
+#define __KUIPER_COMPILER_H_INCLUDED__
 
 
 #include <kuiper/types.h>

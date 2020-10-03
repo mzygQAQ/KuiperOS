@@ -1,5 +1,5 @@
-#ifndef _KUIPER_RBTREE_H_INCLUDED_
-#define _KUIPER_RBTREE_H_INCLUDED_
+#ifndef __KUIPER_RBTREE_H_INCLUDED__
+#define __KUIPER_RBTREE_H_INCLUDED__
 
 #include <kuiper/kernel.h>
 
