@@ -6,7 +6,7 @@ DA_DRW  equ 0x92
 DA_DRWA equ 0x93
 DA_C    equ 0x98    ;代表该段是可执行代码段
 DA_CR   equ 0x9a
-DA_CC0  equ 0x9c
+DA_CC0  equ 0x9c    ;一致性
 DA_CC0R equ 0x9e
 
 ;标识段类型的属性
