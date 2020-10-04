@@ -28,7 +28,10 @@ void print_int_hex(int x)
 void print_newline()
 {
     posCol__ = 0;
-    posRow__ += 1;
+    if (posRow__ == (MAX_ROW - 1))
+       scoll_screen(1);
+    else
+        posRow__ += 1;
 }
 
 void clear_screen()
