@@ -29,7 +29,9 @@ void print_newline()
 {
     posCol__ = 0;
     if (posRow__ == (MAX_ROW - 1))
-       scoll_screen(1);
+        // If it is the last row, scroll up one row 
+        // and keep the number of rows unchanged.
+        scoll_screen(1);
     else
         posRow__ += 1;
 }
