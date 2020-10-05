@@ -12,3 +12,11 @@ KuiperOS是一个轻量级的osKernel. 仅用于学习计算机组成原理和�
 
 降特权级retf时, 目标代码段特权级与目标栈段特权级必须完全相同 ss.rpl == cs.rpl && ss.dpl == cs.rpl
 
+</br>
+</br>
+使用调用门从low->high再retf返回low时，cpu会自动清空段寄存器的值.
+
+
+</br>
+</br>
+段页式内存管理
