@@ -2,25 +2,30 @@
 
 org 0x9000
 
+BaseAddrOfPageDir		equ 0x200000
+BaseAddrOfPageTable		equ 0x201000
+
 jmp CODE16_SEGMENT
 
 ;===========================================================================================================================================
 [section .gdt]
-;							      段基址		段界限							段属性
+;							      段基址		       段界限							段属性
 GDT_ENTRY         : 
-NOTUSE_DESC       : Descriptor 	  0,		 0,								    0		            ;第0个描述符占位不使用
-CODE32_DESC       : Descriptor    0,         CODE32_SEGMENT_LEN - 1,			DA_C    + DA_32 + DA_DPL0		;32位代码段描述符表
-VIDEO_DESC        : Descriptor    0xb8000,   0x07fff,							DA_DRWA + DA_32 + DA_DPL3		;Vga-Text模式显卡内存段描述符表
-DATA32_DESC       : Descriptor    0,         DATA32_SEGMENT_LEN - 1,            DA_DR   + DA_32	+ DA_DPL0	;只读数据段描述符号
-STACK32_DESC      : Descriptor    0,         STACK32_SEGMENT_LEN - 1,           DA_DRW  + DA_32	+ DA_DPL0	;可读可写
-FUNCTION_DESC     : Descriptor    0,         FUNCTION_SEGMENT_LEN - 1,          DA_C    + DA_32 + DA_DPL0   ;可执行
-TASK1_LDT_DESC    : Descriptor    0,         TASK1_LDT_SEGMENT_LEN -1,          DA_LDT  + DA_DPL0           ;局部描述服
-TSS_DESC          : Descriptor    0,         TSS_SEGMENT_LEN - 1,               DA_I386_TSS + DA_DPL0       ;TSS     
+NOTUSE_DESC       : Descriptor 	  0,		           0,								0		                        
+CODE32_DESC       : Descriptor    0,                   CODE32_SEGMENT_LEN - 1,			DA_C    + DA_32 + DA_DPL0		
+VIDEO_DESC        : Descriptor    0xb8000,             0x07fff,							DA_DRWA + DA_32 + DA_DPL3		
+DATA32_DESC       : Descriptor    0,                   DATA32_SEGMENT_LEN - 1,          DA_DR   + DA_32	+ DA_DPL0	    
+STACK32_DESC      : Descriptor    0,                   STACK32_SEGMENT_LEN - 1,         DA_DRW  + DA_32	+ DA_DPL0	    
+FUNCTION_DESC     : Descriptor    0,                   FUNCTION_SEGMENT_LEN - 1,        DA_C    + DA_32 + DA_DPL0       
+TASK1_LDT_DESC    : Descriptor    0,                   TASK1_LDT_SEGMENT_LEN -1,        DA_LDT  + DA_DPL0               
+TSS_DESC          : Descriptor    0,                   TSS_SEGMENT_LEN - 1,             DA_I386_TSS + DA_DPL0
+PAGE_DIR_DESC     : Descriptor    BaseAddrOfPageDir,   4096-1,                          DA_DRW  + DA_32
+PAGE_TABLE_DESC   : Descriptor    BaseAddrOfPageTable, 1024-1,                          DA_DRW  + DA_32 + DA_G_4K                       
 
-;调用门描述符定义                选择子              偏移地址         参数数     属性
-FUNC_CG_ADD_DESC  : Gate      FunctionSelector,   CG_ADD_OFFSET,   0,         DA_I386C_GATE + DA_DPL3         
-FUNC_CG_SUB_DESC  : Gate      FunctionSelector,   CG_SUB_OFFSET,   0,         DA_I386C_GATE + DA_DPL3
-FUNC_CG_WRT32_DESC: Gate      FunctionSelector,   write_string32_offset,0,    DA_I386C_GATE + DA_DPL3
+;调用门描述符定义             选择子              偏移地址              参数数     属性
+FUNC_CG_ADD_DESC  : Gate      FunctionSelector,   CG_ADD_OFFSET,         0,         DA_I386C_GATE + DA_DPL3         
+FUNC_CG_SUB_DESC  : Gate      FunctionSelector,   CG_SUB_OFFSET,         0,         DA_I386C_GATE + DA_DPL3
+FUNC_CG_WRT32_DESC: Gate      FunctionSelector,   write_string32_offset, 0,         DA_I386C_GATE + DA_DPL3
 
 
 GDT_LEN	 equ $ - GDT_ENTRY                                                          ;全局描述符表的长度
@@ -38,9 +43,13 @@ Stack32Selector       equ (0x004 << 3) + SA_TIG + SA_RPL0
 FunctionSelector      equ (0x005 << 3) + SA_TIG + SA_RPL0
 Task1LdtSelector      equ (0x006 << 3) + SA_TIG + SA_RPL0
 TssSelector           equ (0x007 << 3) + SA_TIG + SA_RPL0
-FuncCgAddSelector     equ (0x008 << 3) + SA_TIG + SA_RPL3
-FuncCgSubSelector     equ (0x009 << 3) + SA_TIG + SA_RPL3
-FuncCgWrt32Selector   equ (0x00A << 3) + SA_TIG + SA_RPL3
+
+PageDirSelector       equ (0x008 << 3) + SA_TIG + SA_RPL0
+PageTableSelector     equ (0x009 << 3) + SA_TIG + SA_RPL0
+
+FuncCgAddSelector     equ (0x00A << 3) + SA_TIG + SA_RPL3
+FuncCgSubSelector     equ (0x00B << 3) + SA_TIG + SA_RPL3
+FuncCgWrt32Selector   equ (0x00C << 3) + SA_TIG + SA_RPL3
 
 [section .s16]
 [bits 16]
@@ -168,15 +177,12 @@ CODE32_SEGMENT:
 	mov ebp, KUIPER_OS_OFFSET
 	mov bx, 0x0c
 	mov dx, 0x0100
-	call FuncCgWrt32Selector : 0
-	;call FunctionSelector : write_string32_offset
+	call FuncCgWrt32Selector : 0  ;call FunctionSelector : write_string32_offset
 
-	;mov ax, 3
-	;mov bx, 1
-	; call FuncCgAddSelector : 0              ;利用调用门去调用函数
-	;call FunctionSelector : CG_ADD_OFFSET     ;利用选择子+偏移地址调用函数
+	;初始化页表并开启分页机制.
+	call init_pagetable_and_enable_page
 
-	;加载tss
+	;加载TSS
 	mov ax, TssSelector
 	ltr ax
 
@@ -192,7 +198,23 @@ CODE32_SEGMENT:
 	retf
 
 	jmp $
+
+;初始化页表并开启分页机制.
+;内存布局:
+;1024 * 4        = 4KB的页目录
+;1024 * 1024 * 4 = 4MB的页表项
+init_pagetable_and_enable_page:
+	;_1 初始化也目录
+
+	;_2 初始化1024个页表项
+
+	;_3 开启i386二级分页机制
+
+	ret
+
 CODE32_SEGMENT_LEN equ $ - CODE32_SEGMENT
+
+
 ;================================================================================
 [section .dat]
 [bits 32]
@@ -203,6 +225,7 @@ DATA32_SEGMENT:
 DATA32_SEGMENT_LEN   equ $ - DATA32_SEGMENT
 ;================================================================================
 
+
 ;================================================================================
 ;这里定义4kb内存作为保护模式下的栈空间
 [section .gs32]
@@ -212,6 +235,8 @@ STACK32_SEGMENT:
 STACK32_SEGMENT_LEN	  equ $ - STACK32_SEGMENT
 TopOfStack32          equ STACK32_SEGMENT_LEN - 1
 ;================================================================================
+
+
 
 ;================================================================================
 [section .func]
@@ -311,7 +336,8 @@ TASK1_CODE_SEGMENT_LEN equ $ - TASK1_CODE_SEGMENT
 [bits 32]
 TASK1_DATA_SEGMENT:
 
-taskName: db 'kernel-daemon-task'
+taskName: db 'kernel-daemon-task' 
+		  db 0
 taskNameOffset equ taskName - $$
 
 TASK1_DATA_SEGMENT_LEN equ $ - TASK1_DATA_SEGMENT

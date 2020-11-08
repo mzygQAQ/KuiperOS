@@ -1,5 +1,10 @@
+;这里的属性用于GDT/IDT
+;这里的定义很乱,有时间重构下,Intel的设计很恶心,这里diss一下
 ;段属性常量
 DA_32   equ 0x4000
+
+DA_G_4K    equ 0x8000 ;G=1 时，段界限的粒度为4KB
+DA_G_BYTE  equ 0x0000 ;G=0 时，段界限的粒度为字节 
 
 DA_DR   equ 0x90
 DA_DRW  equ 0x92
@@ -23,6 +28,10 @@ DA_DPL1 equ 0x20
 DA_DPL2 equ 0x40
 DA_DPL3 equ 0x60
 
+
+
+
+;SA_XX的属性用于选择子.
 ;描述符标的类型: 全局描述符表 + 局部描述符表
 SA_TIG equ 0   ;0[0]00
 SA_TIL equ 4   ;0[1]00
