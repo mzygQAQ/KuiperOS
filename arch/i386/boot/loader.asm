@@ -180,6 +180,7 @@ CODE32_SEGMENT:
 	call FuncCgWrt32Selector : 0  ;call FunctionSelector : write_string32_offset
 
 	;初始化页表并开启分页机制.
+	;对于内核来说,0-4G的物理内存采用二级页表,逻辑地址==线性地址==物理地址
 	call init_pagetable_and_enable_page
 
 	;加载TSS
@@ -190,7 +191,7 @@ CODE32_SEGMENT:
 	mov ax, Task1LdtSelector
 	lldt ax
 	;jmp Task1CodeSelector : 0 error: 特权级高的代码也不能直接跳转到低的代码段
-	; 必须是使用retf,前提是先把目标段的堆栈信息和代码地址压入当前内核的堆栈中
+	;必须是使用retf,前提是先把目标段的堆栈信息和代码地址压入当前内核的堆栈中
 	push Task1StackSelector
 	push TASK1_STACK_SEGMENT_LEN - 1
 	push Task1CodeSelector
@@ -199,17 +200,31 @@ CODE32_SEGMENT:
 
 	jmp $
 
-;初始化页表并开启分页机制.
+;初始化页表并开启x86_32分页机制.
 ;内存布局:
 ;1024 * 4        = 4KB的页目录
 ;1024 * 1024 * 4 = 4MB的页表项
 init_pagetable_and_enable_page:
-	;_1 初始化也目录
+	pusha
+	;_1 初始化1024个页目录
+	xor eax, eax
+	mov ax, PageDirSelector
+	mov es,  ax														
+	xor edi, edi														;es:edi为目的地址
+	mov eax, BaseAddrOfPageTable | PG_ATTR_P |PG_ATTR_USU | PG_ATTR_RWX	;子页表的地址|页的属性,页为4k对齐,低12位为0,Intel将其用作页属性
+	mov ecx, 1024														;页目录共1024项
+	cld
+.init_pde:
+	stosd 																;stosw自动+dword偏移
+	add eax, 4096
+	loop .init_pde
 
 	;_2 初始化1024个页表项
+.init_pte:
+	loop .init_pte
 
 	;_3 开启i386二级分页机制
-
+	popa
 	ret
 
 CODE32_SEGMENT_LEN equ $ - CODE32_SEGMENT
