@@ -1,4 +1,4 @@
-#include <kuiper/printk.h>
+#include <kuiperos/printk.h>
 
 volatile int posRow__;
 volatile int posCol__;

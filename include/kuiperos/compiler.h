@@ -1,8 +1,7 @@
 #ifndef __KUIPER_COMPILER_H_INCLUDED__
 #define __KUIPER_COMPILER_H_INCLUDED__
 
-
-#include <kuiper/types.h>
+#include <kuiperos/types.h>
 
 /**
  * 关于编译器特性的一些代码,目前KuiperOS只支持使用GCC编译器进行编译
@@ -31,12 +30,13 @@
 #define __always_inline__ inline
 #endif
 
-#define offsetof(type,member) ((size_t)&(((type*)0)->member))
+#define offsetof(type, member) ((size_t) & (((type *)0)->member))
 
-#define container_of(ptr, type, member) ({ \
-     const typeof( ((type *)0)->member ) *__mptr = (ptr); \
-     (type *)( (char *)__mptr - offsetof(type,member) );})  
-
+#define container_of(ptr, type, member)                                        \
+  ({                                                                           \
+    const typeof(((type *)0)->member) *__mptr = (ptr);                         \
+    (type *)((char *)__mptr - offsetof(type, member));                         \
+  })
 
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
