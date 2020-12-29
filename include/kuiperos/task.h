@@ -1,7 +1,6 @@
 #ifndef __KUIPER_TASK_H_INCLUDED__
 #define __KUIPER_TASK_H_INCLUDED__
 
-#include <kuiperos/compiler.h>
 #include <kuiperos/list.h>
 #include <kuiperos/spinlock.h>
 #include <kuiperos/types.h>
@@ -40,13 +39,6 @@ union thread_union {
   unsigned long
       stack[THREAD_SIZE / sizeof(long)]; /* 每个用户态进程使用的内核栈 */
 };
-
-/* task state definations: */
-#define TASK_STATE_RUNNING 0
-#define TASK_STATE_INTERRUPTIBLE 1
-#define TASK_STATE_UNINTERRUPTIBLE 2
-#define TASK_STATE_ZOMBIE 4
-#define TASK_STATE_STOPPED 8
 
 struct task_struct {
   pid_t pid;
